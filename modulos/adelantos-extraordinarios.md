@@ -146,6 +146,13 @@ Reglas:
   `.env` (piloto) → esta columna. Si la columna todavía no existe se asume
   encendido: un despliegue adelantado al SQL no debe apagarle el módulo a nadie.
 
+**El panel admin de Payway escribe la MISMA columna** (§10.2), para poder
+encender o apagar cualquier empresa sin depender de su RRHH. No hay dos
+verdades: el último que la toca manda. Como los dos paneles guardan un id de
+usuario de tablas distintas (`users` vs `admin_users`),
+`extraordinary_advances_toggled_source` dice de cuál panel vino — sin eso, un
+`toggled_by = 12` es ambiguo y "¿quién apagó esto?" no se puede responder.
+
 ## 8. DEV FRONT HR / ENTERPRISE (panel de la empresa)
 
 Pantallas contra los endpoints del §7:
@@ -186,6 +193,25 @@ Pantallas contra los endpoints del §7:
    evidencia de firma y PDFs (solo lectura).
 3. **Exportes** de la reportería del §9.
 4. **Alertas**: pendientes de aprobación envejecidos, cuotas vencidas sin aplicar.
+
+### 10.2 Disponibilidad por empresa (IMPLEMENTADO)
+
+Panel plegado dentro del tablero, con un switch por empresa. Es el mismo
+interruptor del §7.1 y escribe la misma columna, así que apagar acá se refleja
+en el panel Enterprise de esa empresa y en la app de sus empleados.
+
+- `PUT /api/v1/admin/companies/{id}/extraordinary-advances` con `{ "enabled": bool }`
+- Permiso `companies.toggle_extraordinary_advances` (super_admin y admin_ops).
+  Propio, no `companies.freeze`: congelar es temporal y se levanta solo al pasar
+  la fecha; esto es indefinido. Separados se puede dar uno sin el otro.
+- El switch se muestra aunque el rol no pueda moverlo (queda inerte): saber qué
+  empresas lo tienen apagado es información útil para cualquier rol del panel.
+- El cambio entra en el `activity_log` como cualquier edición de la empresa.
+
+El ítem del menú exige `extraordinary_advances.view`, que se creó junto con esto
+— antes no existía, y el ítem estaba comentado justamente por eso. Los permisos
+del panel admin viven en `localStorage` desde el login: quien ya estuviera
+adentro no ve el ítem hasta volver a entrar.
 
 ---
 
