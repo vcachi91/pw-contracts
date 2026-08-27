@@ -53,7 +53,7 @@ adelanta la captación y el consentimiento.
 | **El teléfono se verifica siempre por OTP** | En el kiosco no hay OTP. Se verifica en el primer contacto real: app, WhatsApp o primer login. Hasta entonces `phone_verified_at` es null. |
 | **La cédula se fotografía siempre** | Por kiosco (cámara de la tablet), por app, o por WhatsApp. Sin foto de cédula no hay `pending_approval`. |
 | **Un pre-registro por teléfono** | Si el teléfono ya tiene `user` activo o `pending_approval`, el kiosco lo dice ("ya está registrado") y no crea nada. Si hay un pre-registro abierto, lo reutiliza (idempotente). |
-| **Modo kiosco = pantalla completa** | La tablet está autenticada como admin y se le pasa a un desconocido. Sin menú, sin datos de otros empleados, sin nada del panel. Salir pide el PIN del captador. |
+| **Modo kiosco = pantalla completa** | La tablet está autenticada como admin y se le pasa a un desconocido. Sin menú, sin datos de otros empleados, sin nada del panel. "Salir" vuelve a la lista, sin PIN (ver abajo). |
 | **Trazabilidad** | Cada pre-registro guarda qué captador lo hizo, cuándo, IP y dispositivo. Cada cambio de estado va a la bitácora. |
 
 ## 3. Estados canónicos (nadie inventa otros)
@@ -283,6 +283,23 @@ y saltar a: nombre → cédula → talonario. Al finalizar, `origin=whatsapp`,
   ahora; unificarlos queda como mejora, no como bloqueo.
 
 ## Preguntas abiertas
+
+**D. La tablet no debería usar una sesión de admin.** Hoy el kiosco corre sobre
+la cuenta de administrador del captador: si sale del kiosco, tiene el panel
+completo delante. Hubo un PIN para frenar eso y **se quitó el 2026-08-26**,
+porque era una constante `NEXT_PUBLIC_` — viajaba dentro del JavaScript que baja
+el navegador, cualquiera la leía en las herramientas de desarrollo, y a cambio
+le cobraba fricción al captador en cada salida.
+
+La solución real es un **rol propio** (p. ej. `kiosk_operator`) que solo pueda
+crear pre-registros. Con eso salir del kiosco no lleva a ningún lado interesante
+y el problema desaparece en vez de taparse — y sigue funcionando si la tablet se
+pierde o si la sesión queda abierta. El panel ya tiene el mecanismo
+(`requiredPermission` en `sidebar-data.ts`), así que se apoya en algo existente.
+
+Aparte, y con o sin rol nuevo: **el captador no debería usar la cuenta de admin
+del dueño**. Aunque quede con permisos amplios, así la bitácora dice quién captó
+a quién y se le puede revocar el acceso sin tocar el del dueño.
 
 **C. Campos del bot.** El bot todavía pide banco y fecha de ingreso; el registro
 de la app ya no (`registro-campos-reducidos.md`). Alinear el flujo corto del bot
