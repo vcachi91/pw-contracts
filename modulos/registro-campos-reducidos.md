@@ -92,3 +92,50 @@ El contrato del **resumen de adelanto** (`/requests/summary`) **no cambia**: ese
 `user_document_type` y `user_document_number` tal como los devuelve el backend en la orden. Si el
 backend deja de tener el número de cédula del usuario, ese contrato mostrará lo que haya en la BD
 — otra razón para que el admin pueda completarlo al aprobar (punto 3).
+
+## `company_type`: el id de empresa por sí solo es ambiguo (27/08/2026)
+
+`GET /companies/register-list` mezcla en una sola lista **dos tablas** —`companies` y
+`sub_companies`— que numeran desde 1 por separado. O sea que hay ids que existen en las dos:
+
+```
+companies 2 = Bonanza 94 S.A     sub_companies 2 = Deco Auto        (padre 25, Grupo Piazza)
+companies 7 = Royal Casino       sub_companies 7 = Grupo Lafayette  (padre 25, Grupo Piazza)
+```
+
+`completeRegistration` resolvía buscando **siempre primero en `sub_companies`**, así que la
+subempresa ganaba siempre: quien elegía "Royal Casino" quedaba registrado en Grupo Piazza /
+Grupo Lafayette, con las tasas, el ciclo de salario, la planilla y la visibilidad de RRHH de
+otra empresa. Desde que se crearon esas subempresas (dic 2025) **no entró un solo registro por
+app a Bonanza 94 ni a Royal Casino**.
+
+El request de `POST /auth/complete-registration` acepta ahora un campo más:
+
+| campo          | tipo   | obligatorio | valores                   |
+|----------------|--------|-------------|---------------------------|
+| `company_type` | string | **no**      | `company` \| `subcompany` |
+
+Es **opcional a propósito**: las versiones ya publicadas de la app no lo mandan, y cuando no
+viene se conserva el comportamiento viejo tal cual. Tabla de decisión, verificada contra los
+datos reales:
+
+| `company_type` | `company_id` | resultado                                   |
+|----------------|--------------|---------------------------------------------|
+| (no viene)     | 2            | company 25 / sub 2  — comportamiento viejo  |
+| `company`      | 2            | company 2 / sub null — Bonanza 94 S.A       |
+| `subcompany`   | 2            | company 25 / sub 2  — Deco Auto             |
+| `company`      | 7            | company 7 / sub null — Royal Casino         |
+| `subcompany`   | 9            | company 25 / sub 9  — U.S. Polo             |
+
+La lógica padre/hijo no cambia: una subempresa real sigue resolviendo a su empresa padre y
+guardando su `sub_company_id`.
+
+Quien consuma `register-list` **debe arrastrar el `tipo`** de cada fila: usar el `id` solo como
+clave de un desplegable produce items con valor repetido (en Flutter eso tumba la pantalla con
+un assert en debug, y en release hace que se seleccione la fila equivocada). El bot de WhatsApp
+matchea por nombre, así que ya sabe de qué tabla salió; ahora lo arrastra en la sesión.
+
+**Esto va a empeorar solo.** `sub_companies` va por el id 21; las próximas toman 22, 23, 24,
+**25** (Grupo Piazza) y **26** (Cinépolis). Cuatro subempresas más y Grupo Piazza queda con el
+mismo problema. El arreglo de fondo sería que `register-list` devuelva un id no ambiguo
+(`"c:2"` / `"s:2"`), pero eso rompe a los clientes viejos y por eso no se hizo.
