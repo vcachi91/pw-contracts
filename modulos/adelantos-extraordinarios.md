@@ -270,3 +270,80 @@ cada backend — y ambos comparten la misma MySQL.
 Los PNG de firma que sube la app tienen que ser legibles por los paneles HR y
 Admin para mostrar la evidencia. Falta definir dónde viven (S3 / Spaces / URL
 firmada) y quién los sirve.
+
+---
+
+## 11. Motivo de la solicitud (27/08/2026 — IMPLEMENTADO)
+
+Al pedir un adelanto el empleado declara **por qué** lo necesita. Antes solo
+viajaban monto y cuotas, y quien aprueba no tenía con qué decidir: dos
+solicitudes de $500 a 6 cuotas se veían idénticas aunque una fuera una urgencia
+médica y la otra no.
+
+`POST /extraordinary-advances/submit` acepta tres campos más:
+
+| campo | obligatorio | forma |
+|---|---|---|
+| `reason_category` | **sí** | key del catálogo |
+| `reason_description` | **sí** | 10–500 caracteres |
+| `support_document` | no | `file` (multipart) |
+| `support_document_base64` + `support_document_name` | no | base64 |
+
+**El catálogo NO está en la app ni en un ENUM de la base.** Vive en
+`config/extraordinary_advances.php` de app-api y viaja en `/eligibility`:
+
+```json
+"reasons": [ {"key":"salud","label":"Salud"}, ... ],
+"description_min_length": 10,
+"description_max_length": 500,
+"support_document": { "enabled": true, "required": false, "max_bytes": 5242880,
+                      "mimes": ["jpg","jpeg","png","pdf"] }
+```
+
+Así agregar o quitar un motivo es editar un archivo: sin migración y sin
+publicar una versión en las tiendas. Por eso la columna es `VARCHAR` y no
+`ENUM`. Las `key` no se tocan nunca —romperían el histórico—; los `label` sí.
+
+⚠️ **La lista actual la puso el desarrollo como punto de partida, no el
+negocio.** Revisarla con el dueño del producto.
+
+Se aceptan dos formas para el soporte porque **el cliente HTTP de la app no arma
+multipart** y la firma ya viajaba como base64. En base64 la extensión se deduce
+de los primeros bytes del archivo, nunca del nombre que manda el cliente:
+confiar en el nombre deja subir un `.php` llamado `.jpg`.
+
+Las columnas son NULL: las solicitudes anteriores a esta fecha no tienen motivo
+y no se les puede inventar uno. La obligatoriedad se valida en la app y en la
+API, no con `NOT NULL`.
+
+## 12. Aviso al empleado por WhatsApp (IMPLEMENTADO)
+
+Hasta el 27/08/2026 aprobar un adelanto **no le avisaba nada al empleado**:
+`notifyEmployee()` en hr-backend era un stub que solo escribía en el log.
+
+El panel Enterprise no tiene credenciales de Twilio —viven solo en app-api— así
+que **encola** en `employee_notifications` de la base compartida y app-api
+envía con `php artisan notifications:send` (cron cada minuto).
+
+Se eligió la cola sobre las alternativas: un HTTP interno hr→app pierde el aviso
+si app-api está caído en ese instante, y duplicar las credenciales pone el mismo
+secreto en dos servidores. La cola además permite reintentar (3 intentos antes
+de marcar `failed`).
+
+Índice único por `(user_id, event, subject_type, subject_id)`: si el aprobador
+toca dos veces el botón, al empleado no le llegan dos WhatsApps.
+
+## 13. PDF de la solicitud (IMPLEMENTADO)
+
+`GET /api/v1/payway/extraordinary-advances/{id}/pdf` — documento imprimible para
+que **RRHH lo firme junto al colaborador**. Sale del panel Enterprise porque es
+RRHH quien firma. Incluye datos de la empresa y del colaborador, monto y cuotas,
+el motivo, el calendario de descuentos y dos líneas de firma.
+
+El logo de la empresa se incrusta **como data URI**: dompdf no sale a internet a
+buscar imágenes. El archivo lo escribió admin-api en su propio disco; los dos
+corren en el mismo servidor, así que se lee por ruta (`config/payway.php`,
+configurable). Si no está, el documento sale con el nombre de la empresa en
+texto — **nunca se cae por un logo**.
+
+`laravel-dompdf` ya estaba instalado en hr-backend; no se agregó dependencia.
