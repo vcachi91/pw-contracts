@@ -24,6 +24,7 @@ primero**, en un commit que explique por qué. Los repos se alinean después.
 |---|---|
 | `arquitectura.md` | Mapa de los 6 repos: qué es cada uno, con quién habla, dónde deploya. **Empezar por aquí.** |
 | `modulos/` | Contratos vivos. Módulos en construcción o en producción que se siguen tocando. |
+| `modulos/saldo-disponible.md` | Cómo se devenga el saldo EWA y por qué. **Leer antes de tocar cualquier cosa que mueva el disponible del empleado.** |
 | `historicos/` | Contratos ya implementados y cerrados. Se conservan porque explican *por qué* el código es como es. No se editan. |
 
 ## Cómo se usa con Claude Code
