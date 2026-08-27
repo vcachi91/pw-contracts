@@ -62,7 +62,7 @@ Decide si el módulo se muestra y con qué parámetros.
     "period_type": "quincenal",
     "max_installment_amount": "120.00",
     "available_margin": "280.00",
-    "min_amount": "100.00",
+    "min_amount": "201.00",
     "max_amount": "2000.00",
     "has_active_advance": false
 }}
@@ -70,6 +70,13 @@ Decide si el módulo se muestra y con qué parámetros.
 
 - `enabled=false` + `disabled_reason` → la app muestra ese texto ("Tu empresa aún no habilitó
   este beneficio…"). Un **404 equivale a enabled=false** (así funciona hoy sin backend).
+  Es también por donde sale el interruptor que RRHH controla desde el panel Enterprise
+  (§7.1 del contrato del módulo): al apagarlo, la app deja de mostrar la opción.
+- `min_amount` es **201.00**, no un número redondo: el producto EWA de Payway tiene un
+  máximo por transacción de 200, y si el mínimo del extraordinario fuera menor o igual, los
+  dos productos se solaparían para el mismo monto. Sale de
+  `REQUEST_MAX_PER_REQUEST + 1`, así que si algún día cambia el tope de EWA, el mínimo del
+  extraordinario se corre solo.
 - `max_installment_amount` = 15% de `salary_per_period`.
 - `available_margin` = lo que queda libre bajo la regla del 50% contando las deducciones
   actuales del empleado.

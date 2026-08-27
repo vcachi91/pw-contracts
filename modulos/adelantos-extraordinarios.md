@@ -120,6 +120,32 @@ Endpoints para el panel Enterprise (nombres orientativos; mantener los shapes de
 - **Sync**: definir con el dev backend app dónde vive la verdad (payway-app vs payway-hr) y
   el mecanismo de sincronización — un solo dueño por dato, el otro lee.
 
+### 7.1 Interruptor del beneficio por empresa (IMPLEMENTADO)
+
+Cada empresa decide si ofrece o no el producto. La verdad vive en **una sola
+columna de la base compartida**: `companies.extraordinary_advances_enabled`
+(más `_toggled_at` y `_toggled_by` para la bitácora). El panel Enterprise la
+escribe; app-api la lee. No hay HTTP entre los dos.
+
+- `GET  /api/v1/payway/extraordinary-advances/module-settings` →
+  `{ enabled, toggled_at, active_advances, company_name }`
+- `PUT  /api/v1/payway/extraordinary-advances/module-settings` con `{ "enabled": bool }`
+
+Reglas:
+
+- Solo **`com_admin`**. El resto recibe 403; `GET .../permissions` expone
+  `can_toggle_module` para que el front ni siquiera pinte el switch.
+- **Apagarlo NO cancela nada.** Los adelantos aprobados siguen amortizándose y
+  sus cuotas se siguen descontando de planilla — cortar una amortización viva
+  sería romper un acuerdo firmado. Lo único que cambia es que el empleado deja
+  de ver la opción de solicitar uno nuevo. Por eso el GET devuelve
+  `active_advances`: el panel lo dice explícitamente antes de apagar.
+- **Por defecto viene encendido** (`DEFAULT 1`) para todas las empresas.
+- Del lado de app-api, `Quoter::moduleEnabledFor()` decide en tres capas, de la
+  más fuerte a la más débil: interruptor global de config → lista blanca del
+  `.env` (piloto) → esta columna. Si la columna todavía no existe se asume
+  encendido: un despliegue adelantado al SQL no debe apagarle el módulo a nadie.
+
 ## 8. DEV FRONT HR / ENTERPRISE (panel de la empresa)
 
 Pantallas contra los endpoints del §7:
@@ -136,6 +162,11 @@ Pantallas contra los endpoints del §7:
    acción de marcar aplicadas.
 6. Visibilidad solo del rol aprobador para aprobar/rechazar/desembolsar; lectura para el
    resto según permisos existentes del panel.
+7. **Interruptor del beneficio** (§7.1) — switch en la cabecera de la bandeja, visible solo
+   con `can_toggle_module`. Encender es directo; **apagar pide confirmación** y avisa cuántos
+   adelantos siguen en curso, porque no se cancelan. Los riesgos son asimétricos: encender de
+   más se corrige apagando, pero apagar sin querer deja a toda la plantilla sin poder
+   solicitar y nadie se entera hasta que alguien reclama.
 
 ## 9. DEV BACKEND ADMIN (operación Payway)
 
