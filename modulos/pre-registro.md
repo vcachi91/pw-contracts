@@ -3,7 +3,25 @@
 > **✅ COPIA CANÓNICA.** Cualquier cambio de regla, estado o nombre de campo se
 > hace aquí primero, en un commit que explique por qué.
 >
-> Estado: **diseño aprobado el 2026-08-26, sin implementar.** Decisiones del
+> Estado: **§6, §7, §8 y §9 implementados el 2026-08-26.** Falta el camino (b),
+> el flujo corto del bot de WhatsApp, y el camino (a) completo (`/complete`).
+>
+> Ajustes que salieron al construir, y que mandan sobre el diseño de arriba:
+> - El segundo nivel es **sucursal** (`sucursales`), no sub-company: es lo que
+>   usan `EmployeeController::store` y el registro de la app.
+> - La firma va como **MEDIUMBLOB en la tabla**, no como archivo: admin-api
+>   corre en pw-staging y app-api en pw-backend, son máquinas distintas y no
+>   comparten disco. Lo único común es la MySQL. App-api copia el PNG a su
+>   storage al completar el registro.
+> - La tabla vive en la base **`app`** (la conexión por defecto de admin-api ya
+>   es esa), así que app-api la lee sin configurar nada.
+> - El kiosco vive en **`/kiosco`**, fuera del grupo `(dashboard)`, para no
+>   heredar el menú del panel.
+> - El texto del consentimiento es **copia literal** del de la app
+>   (`registration_signature_sheet.dart`), con el nombre reemplazado por
+>   "titular de la línea telefónica {teléfono}" porque el kiosco no pide nombre.
+>
+> Decisiones del
 > dueño del producto: solo panel Admin (no Enterprise); lo opera **el captador**,
 > nunca el empleado solo; al empleado se le pide **únicamente su número y su
 > firma**; tres caminos para completar; la firma no se vuelve a pedir en ninguno.
