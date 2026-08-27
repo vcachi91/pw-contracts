@@ -30,7 +30,8 @@ adelanta la captación y el consentimiento.
 | **La empresa la fija el captador una vez por sesión de kiosco** | Está físicamente en esa empresa. Todos los pre-registros de la sesión heredan `company_id` (+ sucursal si aplica). El empleado no la elige. |
 | **La firma se captura una sola vez** | Se guarda con el texto exacto firmado, su versión y su hash. Ningún camino posterior la vuelve a pedir. |
 | **El consentimiento nombra al teléfono y a la empresa, no a una persona** | *"Yo, titular del número +507 6xxx-xxxx, colaborador de {empresa}, autorizo…"*. La identidad se ata después: el OTP prueba el teléfono y la foto de cédula prueba quién es. Las tres piezas juntas forman la evidencia. |
-| **El texto lo sirve el backend** | El front no arma el texto: lo pide (§7 `/consent-text`), lo muestra y firma. Misma versión que use la app cuando adopte este endpoint (pregunta abierta A). |
+| **El texto lo sirve el backend y se lee antes de firmar** | El front no arma el texto: lo pide (§7 `/consent-text`), lo muestra **completo y con scroll**, y solo habilita "Acepto" cuando el empleado llegó al final — el mismo patrón que la firma de la app. |
+| **Los flujos de registro actuales no cambian** | App, WhatsApp y panel siguen funcionando exactamente igual para quien no tiene pre-registro. Todo lo de este módulo es **aditivo**: si el backend no responde o no hay pre-registro, la app se comporta como hoy. |
 | **El teléfono se verifica siempre por OTP** | En el kiosco no hay OTP. Se verifica en el primer contacto real: app, WhatsApp o primer login. Hasta entonces `phone_verified_at` es null. |
 | **La cédula se fotografía siempre** | Por kiosco (cámara de la tablet), por app, o por WhatsApp. Sin foto de cédula no hay `pending_approval`. |
 | **Un pre-registro por teléfono** | Si el teléfono ya tiene `user` activo o `pending_approval`, el kiosco lo dice ("ya está registrado") y no crea nada. Si hay un pre-registro abierto, lo reutiliza (idempotente). |
@@ -61,7 +62,7 @@ y la conversión se mide con un `count`.
 | `id` | uuid | Es lo que viaja en URLs. **Nunca el teléfono.** |
 | `phone` | string, único entre los abiertos | E.164 |
 | `company_id`, `sub_company_id` | fk, sucursal nullable | de la sesión de kiosco |
-| `signature_path` | string | PNG en `storage/app/public/signatures/` (mismo store que hoy) |
+| `signature_png` | mediumblob | El PNG de la firma, **en la tabla**, no en disco. Admin-api (pw-staging) y app-api (pw-backend) son servidores distintos: un archivo escrito por uno no existe para el otro, pero la MySQL sí es compartida. Al completar, app-api lo escribe a su `storage/signatures/` y setea `user_details.signature_path` como hoy. |
 | `consent_version` | string | p. ej. `prereg_v1` |
 | `consent_text_hash` | sha256 | del texto exacto renderizado con teléfono y empresa |
 | `consent_signed_at` | datetime | |
@@ -111,19 +112,22 @@ en cómo llegan el **nombre**, la **foto de cédula**, el **talonario** y la
 
 ### (c) Continuar por la app — *el empleado instala la app después*
 
-Para el empleado es el **registro corto**: número, código, nombre, dos fotos.
+El empleado entra al **registro normal de la app**; es la app la que detecta el
+pre-registro sola.
 
-1. Instala la app → "Registrarme" → su teléfono.
-2. App back ve el pre-registro → responde `200` con el shape normal **más** el
-   bloque `pre_registration` (§8) → manda OTP.
-3. Pantalla OTP, la de siempre.
-4. La app muestra el paso 1 **reducido**: la empresa ya puesta y en solo lectura
-   (*"{empresa} · consentimiento firmado el {fecha}"*), y solo nombre y apellido
-   editables. Sin selector de empresa.
-5. Paso 2: foto de cédula, foto de talonario, crear contraseña. **Sin bloque de
-   firma.**
-6. `complete-registration` sin `signature_img` → app back usa la del pre-registro.
-   Queda `pending_approval`.
+1. Instala la app → "Registrarme" → escribe su teléfono en el paso 1.
+2. **Al terminar de escribir el número**, la app consulta en silencio
+   (§8 `/auth/pre-registration/lookup`). Si existe: la empresa aparece ya
+   seleccionada y bloqueada, con una banda *"Pre-registrado en {empresa} ·
+   consentimiento firmado el {fecha}"*. Solo quedan nombre y apellido.
+   Si no existe: el paso 1 es el de siempre, sin ningún cambio.
+3. Registro → OTP, la pantalla de siempre.
+4. Paso 2 (documentos): foto de cédula, foto de talonario. Y el bloque de firma
+   **aparece ya firmado**: muestra la imagen de la firma capturada en el kiosco
+   con *"Firmado el {fecha} en {empresa}"* en lugar del lienzo. No hay nada que
+   dibujar ni que aceptar.
+5. Crear contraseña → `complete-registration` sin `signature_img` → app back usa
+   la heredada. Queda `pending_approval`.
 
 Si la empresa está mal (el captador eligió otra sesión por error): *"¿No es tu
 empresa?"* → habilita el selector, y **se vuelve a pedir la firma**, porque el
@@ -182,6 +186,16 @@ escribe `status`, `completed_via`, `user_id` al completar. Comparten MySQL.
 
 ## 8. DEV BACKEND APP — detectar el pre-registro
 
+**`GET /auth/pre-registration/lookup?phone=`** — nuevo, público, con el mismo
+`throttle` que `register`. Es lo que la app llama al escribir el número.
+Devuelve **lo mínimo** (antes del OTP no se entrega la firma ni nada
+enumerable):
+```json
+{ "exists": true, "company_id": 74, "company_name": "…", "sub_company_id": null,
+  "consent_signed_at": "2026-08-26T15:04:00-05:00" }
+```
+o `{ "exists": false }`. Si el backend aún no lo tiene (404), la app sigue como hoy.
+
 **`POST /auth/register`** agrega dos ramas por teléfono:
 
 1. Existe **pre-registro `captured`** → crea el `user` como hoy (sin contraseña),
@@ -191,11 +205,14 @@ escribe `status`, `completed_via`, `user_id` al completar. Comparten MySQL.
      "id": "uuid",
      "company_id": 74, "company_name": "…", "sub_company_id": null,
      "has_signature": true,
+     "signature_url": "https://…/signatures/sig_…png?expires=…&signature=…",
      "consent_signed_at": "2026-08-26T15:04:00-05:00",
      "next_step": "profile"
    }
    ```
-   `next_step: profile` = la app pide nombre y luego documentos, sin firma.
+   `signature_url` es una URL firmada temporal (la app la muestra en el paso 2
+   como "ya firmado"). Solo se entrega aquí, después de que el teléfono pidió
+   su OTP — nunca en el `lookup`.
 2. Existe **`user` con `origin` en (`admin_kiosk`, `whatsapp`) y sin contraseña**
    → NO es duplicado. Manda OTP, responde `200` con `"next_step": "password"`.
 
@@ -211,16 +228,22 @@ y saltar a: nombre → cédula → talonario. Al finalizar, `origin=whatsapp`,
 
 ## 9. DEV APP (Flutter) — el registro corto
 
+- Paso 1 de `SignupScreen`: al perder el foco el campo de teléfono (o al tener
+  8 dígitos válidos), llamar `lookup` con debounce. Si `exists`: seleccionar y
+  bloquear la empresa, mostrar la banda de pre-registro. Si no, o si el endpoint
+  falla: **nada cambia**, el formulario es el de hoy.
 - `AuthController.register`: si la respuesta trae `pre_registration`, guardarla
   y, tras el OTP, navegar según `next_step`:
-  - `profile` → `SignupScreen` con `prefilled=true`.
+  - `profile` → `SignupScreen` paso 2 con `preRegistration` cargado.
   - `password` → pantalla de crear contraseña (reusar `set-new-password`).
-- `SignupScreen` con `prefilled=true`: paso 1 muestra la empresa en solo lectura
-  con *"consentimiento firmado el {fecha}"* y solo nombre + apellido editables;
-  paso 2 **sin bloque de firma**. Link *"¿No es tu empresa?"* habilita el selector
-  y vuelve a mostrar la firma (regla §2).
-- `complete-registration` no manda `signature_img` cuando `prefilled=true` y no
-  se re-firmó.
+- Paso 2 con `preRegistration`: el bloque de firma muestra la imagen de
+  `signature_url` (con `cacheWidth` y `errorBuilder`, como toda imagen) y el
+  texto *"Firmado el {fecha} en {empresa}"*. Sin lienzo, sin checkbox. El botón
+  final se habilita con solo las dos fotos y la contraseña.
+- Link *"¿No es tu empresa?"* en el paso 1 habilita el selector; si la cambia,
+  el paso 2 vuelve a mostrar el lienzo y el consentimiento normal (regla §2).
+- `complete-registration` no manda `signature_img` cuando hay `preRegistration`
+  y no se re-firmó.
 - Guard anti doble-submit y `cacheWidth` en previews, como en todo el registro.
 
 ## 10. Lo que este módulo deja escrito de paso (fuera de alcance, pero visto)
@@ -231,19 +254,17 @@ y saltar a: nombre → cédula → talonario. Al finalizar, `origin=whatsapp`,
 - `users` no registra el origen de la cuenta. La columna `origin` lo arregla
   hacia adelante; las cuentas viejas quedan `null`.
 
+## Decisiones cerradas (2026-08-26, dueño del producto)
+
+- **Solo número y firma.** Se construye así. La firma es sobre "titular del
+  número + empresa"; la identidad se ata después con OTP y cédula. Si en el
+  futuro un abogado pide firma nominal, el kiosco agrega el nombre y re-versiona
+  el texto — el modelo (versión + hash) ya lo soporta sin migración.
+- **El texto del consentimiento se muestra completo, con scroll, antes de
+  firmar.** Lo sirve el backend (§7). El texto de la app sigue donde está por
+  ahora; unificarlos queda como mejora, no como bloqueo.
+
 ## Preguntas abiertas
-
-**A. Un solo lugar para el texto del consentimiento.** Hoy el de la app vive
-hardcodeado en `registration_signature_sheet.dart` y nombra a la persona. El del
-kiosco nombra al teléfono. Propuesta: que la app también pida su texto a un
-endpoint (mismo mecanismo que §7 `/consent-text`, en app back), y que existan
-dos versiones del texto —persona y teléfono— administradas en un solo sitio.
-Impacta §9. Decisión del dueño del producto.
-
-**B. Validación legal.** ¿Firma sobre "titular del número" + OTP posterior +
-foto de cédula equivale a la firma nominal en la app? El módulo asume que sí.
-Si el abogado dice que no, el camino (c) tendría que re-firmar y el módulo
-pierde la mitad de su gracia. **Preguntar antes de construir.**
 
 **C. Campos del bot.** El bot todavía pide banco y fecha de ingreso; el registro
 de la app ya no (`registro-campos-reducidos.md`). Alinear el flujo corto del bot
