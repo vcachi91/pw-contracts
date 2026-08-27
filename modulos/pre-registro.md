@@ -116,7 +116,25 @@ en cómo llegan el **nombre**, la **foto de cédula**, el **talonario** y la
    sin contraseña → OTP → pantalla **"Crea tu contraseña"** (`set-new-password`,
    ya existe) → entra. No ve formulario, ni firma, ni fotos.
 
-### (b) Enviar a WhatsApp — *el empleado termina desde su teléfono, sin app*
+### (b) Enviar a WhatsApp — ⚠️ OCULTO DE LA INTERFAZ (2026-08-27)
+
+> El botón se quitó del kiosco y de la lista. Mandaba el mensaje bien, pero el
+> bot **no sabe nada de los pre-registros**: al responder, arranca el onboarding
+> desde cero y le pide la firma OTRA VEZ. Eso rompe la promesa central del
+> módulo —"no tendrás que firmar de nuevo"— y genera una segunda firma sobre un
+> documento legal.
+>
+> El endpoint `send-whatsapp` sigue vivo y funcionando; solo se ocultó para no
+> ofrecer algo que todavía no cumple. Para reactivarlo hay que implementar lo
+> que dice §8 abajo, y luego descomentar los dos bloques marcados `OCULTO` en
+> `pw-adminfrontend`.
+>
+> Se difirió a propósito: el bot es una máquina de estados de ~900 líneas con
+> sesión en caché, es el flujo más frágil de los tres, y está atendiendo
+> usuarios reales — si se rompe, nadie se entera hasta que alguien no puede
+> registrarse.
+
+*El empleado termina desde su teléfono, sin app:*
 
 1. Desde el kiosco o desde la lista (§6): "Enviar a WhatsApp".
 2. Mensaje: *"Hola, te pre-registraron en Payway en {empresa}. Para terminar solo
