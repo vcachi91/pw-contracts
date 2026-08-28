@@ -347,3 +347,56 @@ configurable). Si no está, el documento sale con el nombre de la empresa en
 texto — **nunca se cae por un logo**.
 
 `laravel-dompdf` ya estaba instalado en hr-backend; no se agregó dependencia.
+
+## 14. Documentos (27/08/2026 — §5 COMPLETADO)
+
+La sección "Documentos" del detalle llegaba SIEMPRE vacía. No era un bug: los
+PDFs del §5 nunca se construyeron. Pero además había tres cosas que **sí
+existían** y vivían dispersas en otros rincones de la pantalla, así que decir
+"sin documentos disponibles" era peor que no tener la sección.
+
+Ahora la lista es una sola e incluye:
+
+| documento | origen |
+|---|---|
+| Solicitud de adelanto (PDF para firmar) | generado |
+| **Acuerdo de amortización firmado** | generado (§5) |
+| **Constancia de aceptación electrónica** | generado (§5) |
+| **Estado de cuenta** | generado (§5) |
+| Soporte adjuntado por el colaborador | lo sube el empleado |
+| Firma del acuerdo | evidencia |
+| **Comprobante de desembolso** | lo sube RRHH |
+
+`GET /api/v1/payway/extraordinary-advances/{id}/document/{acuerdo|constancia|estado}`
+
+El **acuerdo** imprime el texto TAL CUAL quedó guardado, sin regenerarlo ni
+reformatearlo: es lo que hace válido el descuento si alguien lo discute.
+
+La **constancia** lleva los cinco datos que sostienen la aceptación electrónica
+—versión del documento, huella SHA-256, timestamp del servidor, IP y
+dispositivo—. La huella permite verificar que el texto aceptado no se modificó
+después de la firma.
+
+### Comprobantes que sube RRHH
+
+`POST /api/v1/payway/extraordinary-advances/{id}/documents` (multipart, ≤15 MB)
+
+Resuelve un hueco real: la empresa le paga al colaborador **por fuera del
+sistema** y ese pago no dejaba rastro. Si el colaborador después decía que no lo
+recibió, no había con qué responder.
+
+Los archivos van al **disco privado** de enterprise-api y se sirven por un
+endpoint que valida el alcance. Nunca por URL pública: un comprobante lleva el
+nombre y el monto de un empleado. El borrado es **lógico** — un comprobante
+borrado por error no se recupera, y su ausencia es justo lo que se discutiría.
+
+Requirió subir `client_max_body_size` a 20 MB en el nginx de enterprise-api, que
+estaba en el default de 1 MB. Sin eso nginx CIERRA la conexión sin devolver 413
+y el panel muestra un error de red engañoso — la misma trampa del kiosco.
+
+### Lo que el panel admin NO muestra
+
+Los tres PDFs generados no aparecen en `admin.payway.pa`: los arma
+enterprise-api con dompdf, que admin-api no tiene instalado. Payway sí ve la
+firma, el soporte y los comprobantes, que es lo que necesita para atender un
+reclamo. Para los generados, se consulta el panel Enterprise.
