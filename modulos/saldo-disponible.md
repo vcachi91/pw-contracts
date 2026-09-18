@@ -11,9 +11,13 @@ cualquier cambio acá se despliega —y se revierte— sin publicar la app.
 
 ```
 neto quincenal   = (salario / 2) − retenciones de ley − deducciones registradas
-disponible       = (neto quincenal / 15) × días devengados × (share_of_basic / 100)
+disponible       = (neto quincenal / días del período) × días devengados × (share_of_basic / 100)
                    − lo ya solicitado en el ciclo
 ```
+
+**Días del período** = del cierre actual al próximo: 15 o **16**, porque los
+cierres están clavados al 15 y al 30 y los meses no miden lo mismo. Era 15 fijo
+hasta el 17/09/2026 (ver más abajo).
 
 - Las retenciones de ley son 30%, salvo `honorarios` (sin retención).
 - `share_of_basic` es por empresa; `percent_permit` del usuario la pisa si es > 0.
@@ -25,6 +29,40 @@ Todo vive en `app/Support/BalanceCalculator.php`. **Ningún consumidor recalcula
 nada por su cuenta**: el home de la app y el bot de WhatsApp llaman ahí. Si se
 duplica, los dos canales terminan mostrándole al mismo usuario dos saldos
 distintos.
+
+## Días devengados (17/09/2026 — el día del cierre ya acredita)
+
+Decisión del dueño, a pedido de David. **El día del cierre acredita 1 día** (antes
+0) y el divisor pasó a ser la **duración real del período**. Las dos cosas van
+juntas: con el +1 y el divisor en 15, los períodos de 16 días acreditarían 107%
+del medio salario.
+
+| | antes | ahora |
+|---|---|---|
+| día del cierre | 0 | **1** |
+| cruza el mínimo de $25 | cierre+3 | **cierre+2** |
+| cierre de quincena de 15 días | 14/15 = 93% | **15/15 = 100%** |
+| cierre de quincena de 16 días | 15/15 = 100% | **16/16 = 100%** |
+
+**Qué se acepta a cambio:** el día del cierre pertenece a la planilla que la
+empresa está por pagar, no a la quincena nueva. Se adelanta sobre un salario que
+el empleador deposita en días, mientras el descuento nuestro cae en la planilla
+siguiente. No hay ventana que lo contenga: `log_period_after` está en **0** en
+las 17 empresas activas.
+
+**Impacto medido el día que se aplicó** (17/09, día 2 del ciclo): el disponible
+total de la planilla activa pasó de B/. 10,345 a B/. 15,326 (+48%) y los
+empleados que cruzan el mínimo, de 85 a 371. El salto es grande porque al inicio
+del ciclo un día es mucho; al final del ciclo el efecto es ~7%.
+
+**Para revertir:** respaldos en `pw-backend:/root/bk-saldo-diaA-*.tgz` y
+`pw-staging:/root/bk-saldo-admin-*.tgz`. No hace falta publicar la app: el saldo
+lo calcula el backend y la app solo lo pinta.
+
+**Tercer consumidor:** `pw-adminbackend/app/Services/Salary/BalanceCalculator.php`
+se había quedado con la regla vieja desde el 27/08 y mostraba un día menos que
+la app (lo usan la ficha del empleado y la segmentación de push). Quedó alineado
+el 17/09.
 
 ## Días devengados (27/08/2026 — se corrigió un off-by-one)
 
