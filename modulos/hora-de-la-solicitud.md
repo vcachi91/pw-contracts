@@ -100,3 +100,32 @@ horario de Panamá.
   los otros dos backends están en `America/Panama`. No afecta a este módulo
   porque el panel Enterprise no muestra estas órdenes, pero cualquier fecha que
   ese backend escriba o serialice queda corrida 5 horas. Revisar aparte.
+
+---
+
+## Estado: implementado el 22/09/2026
+
+Desplegado por copia de archivos, con respaldo previo en cada servidor.
+
+| Repo / servidor | Archivo | Qué cambió |
+|---|---|---|
+| `pw-appbackend` en `pw-backend` | `RequestController.php` | candado atómico en `submitRequest` + hora en `$fecha` |
+| `pw-appbackend` en `pw-backend` | `mail/request_summary.blade.php` | la etiqueta pasa a "Fecha y hora" |
+| `pw-adminbackend` en `pw-staging` | `Models/Order.php` | relación `requestedStatus` + `requested_at` en `$appends` |
+| `pw-adminbackend` en `pw-staging` | `Admin/TransactionController.php` | eager load de `requestedStatus` en listado y detalle |
+| `pw-adminfrontend` en `pw-frontend` | `transactions/TransactionsTable.tsx` | `fechaSolicitud()` en la tabla, la tarjeta y el CSV |
+
+Verificado en producción: la 2831 devuelve `requested_at` 00:21:59 y la 2917
+14:48:11 (hora de Panamá), el correo renderiza "22/09/2026 4:41 p.m.", y de las
+30 filas de la primera página 25 traen `requested_at`. Las 5 restantes son
+canceladas, que nunca se firmaron — en 30 días son 150, todas `source=app`.
+
+**Trampa encontrada al implementar:** `->where('status','requested')->oldestOfMany()`
+devuelve siempre `null`. El `where` encadenado afuera no entra en la subconsulta
+de agregación, que termina eligiendo la fila `ongoing` y el filtro externo la
+descarta. Va `->ofMany(['created_at' => 'min'], fn($q) => $q->where(...))`.
+
+**Para revertir:** `pw-backend:/root/backup-hora-solicitud-*.tar.gz`,
+`pw-staging:/root/backup-requested-at-*.tar.gz`,
+`pw-frontend:/root/TransactionsTable.tsx.bak.*` y, para el panel compilado,
+`/var/backups/adminfe/anterior`.
