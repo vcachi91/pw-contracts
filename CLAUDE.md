@@ -2,8 +2,12 @@
 
 Repo de **documentación pura** — no hay código, no hay build, no hay tests.
 
-Es la fuente única de verdad entre los 6 repos de Payway. Antes de tocar nada,
-leer `README.md` (la regla) y `arquitectura.md` (el mapa de los 6 repos).
+Es la fuente única de verdad entre los repos de Payway. Antes de tocar nada,
+leer `README.md` (la regla) y `arquitectura.md` (el mapa de los repos).
+
+Si el trabajo toca un **servidor** —consultar la base en producción, desplegar,
+revisar por qué algo falla en vivo— leer antes `produccion.md`: dice cómo se
+entra, qué directorio está realmente en uso y cuál es un resto apagado.
 
 ## Al trabajar aquí
 

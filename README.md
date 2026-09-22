@@ -22,7 +22,8 @@ primero**, en un commit que explique por qué. Los repos se alinean después.
 
 | Carpeta | Qué contiene |
 |---|---|
-| `arquitectura.md` | Mapa de los 6 repos: qué es cada uno, con quién habla, dónde deploya. **Empezar por aquí.** |
+| `arquitectura.md` | Mapa de los repos: qué es cada uno, con quién habla, dónde deploya. **Empezar por aquí.** |
+| `produccion.md` | Los tres servidores: cómo se entra, qué directorio está en vivo y cuál es un resto apagado, dónde está la base, cómo se despliega. **Leer antes de tocar un servidor.** |
 | `modulos/` | Contratos vivos. Módulos en construcción o en producción que se siguen tocando. |
 | `modulos/saldo-disponible.md` | Cómo se devenga el saldo EWA y por qué. **Leer antes de tocar cualquier cosa que mueva el disponible del empleado.** |
 | `historicos/` | Contratos ya implementados y cerrados. Se conservan porque explican *por qué* el código es como es. No se editan. |

@@ -1,21 +1,31 @@
-# Arquitectura Payway — mapa de los 6 repos
+# Arquitectura Payway — mapa de los repos
 
 Todos son hermanos en `d:\NUEVOS BK 2026\htdocs\`. Rutas relativas entre ellos:
 `../pw-appbackend`, `../pw-hrfrontend`, etc.
 
-## Los 6 repos
+Dónde corre cada uno, cómo se entra y cómo se despliega está en
+[`produccion.md`](produccion.md). Ahí también está la lista de carpetas locales
+que **parecen** el proyecto y no lo son (`pw-adminfrontend - copia`,
+`pw-mobileappOLD`, …).
 
-| Repo | Qué es | Stack | Rama | Remoto |
-|---|---|---|---|---|
-| `pw-mobileapp` | App del **empleado** (Android/iOS) | Flutter 3.47 · Dart · GetX | `master` | GitLab `pwmvp` |
-| `pw-appbackend` | API que sirve a la app | Laravel 11 · PHP 8.2 | `stage` | GitLab `pwmvp` |
-| `pw-hrfrontend` | Panel **Enterprise** (la empresa cliente) | Next.js 15 · React 18 · TS · Tailwind | `master` | GitHub `vcachi91` |
-| `pw-hrbackend` | API del panel Enterprise | Laravel 8 · PHP 7.3/8 | `stage` | GitLab `pwmvp` |
-| `pw-adminfrontend` | Panel **Admin** (operación Payway) | Next.js 15 · React 18 · TS · Tailwind | `master` | GitHub `vcachi91` |
-| `pw-adminbackend` | API del panel Admin | Laravel 8 · PHP 7.3/8 | `api_v1.php` · `stage` | GitLab `pwmvp` |
+## Los 6 repos de producto (+ este, `pw-contracts`)
 
-Ojo con la asimetría: **backends en GitLab, frontends en GitHub**, y los backends
-trabajan sobre `stage` mientras app y fronts sobre `master`.
+| Repo | Qué es | Stack | Rama |
+|---|---|---|---|
+| `pw-mobileapp` | App del **empleado** (Android/iOS) | Flutter 3.47 · Dart · GetX | `master` |
+| `pw-appbackend` | API que sirve a la app | Laravel 11 · PHP 8.3 | `stage` |
+| `pw-hrfrontend` | Panel **Enterprise** (la empresa cliente) | Next.js 15 · React 18 · TS · Tailwind | `master` |
+| `pw-hrbackend` | API del panel Enterprise | Laravel 8 | `stage` |
+| `pw-adminfrontend` | Panel **Admin** (operación Payway) | Next.js 15 · React 18 · TS · Tailwind | `master` |
+| `pw-adminbackend` | API del panel Admin | Laravel 8 | `stage` |
+
+**Todos viven en GitHub (`vcachi91`)** desde el 2026-08-26. GitLab (`pwmvp`)
+quedó como archivo de solo consulta y sigue presente en varios clones como
+remoto `gitlab`: no se pushea ahí.
+
+Ojo con la asimetría de ramas: **los backends trabajan sobre `stage`, la app y
+los frontends sobre `master`.** Un PR a la rama equivocada no falla, solo no
+llega a producción.
 
 ## Quién habla con quién
 
