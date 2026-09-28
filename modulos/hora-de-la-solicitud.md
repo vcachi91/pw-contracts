@@ -96,10 +96,11 @@ horario de Panamá.
 - Las 5 órdenes con filas `requested` duplicadas: ¿se limpian dejando la más
   antigua, o se conservan como evidencia del defecto? Hay que decidirlo antes de
   que algún reporte cuente estados.
-- `enterprise-api` corre sin `TIMEZONE` en su `.env`, o sea en **UTC**, mientras
-  los otros dos backends están en `America/Panama`. No afecta a este módulo
-  porque el panel Enterprise no muestra estas órdenes, pero cualquier fecha que
-  ese backend escriba o serialice queda corrida 5 horas. Revisar aparte.
+- ~~`enterprise-api` corre en UTC~~ — **falso, verificado el 28/09/2026.** Su
+  `.env` no trae `TIMEZONE`, pero su `config/app.php` tiene
+  `env('TIMEZONE', 'America/Panama')`: el default del archivo ya es Panamá, a
+  diferencia del de `admin-api`, cuyo default es UTC y lo salva el `.env`. Los
+  tres backends corren en `America/Panama`. No hay nada que corregir.
 
 ---
 

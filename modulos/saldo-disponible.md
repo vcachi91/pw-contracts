@@ -17,7 +17,8 @@ disponible       = (neto quincenal / días del período) × días devengados × 
 
 **Días del período** = del cierre actual al próximo: 15 o **16**, porque los
 cierres están clavados al 15 y al 30 y los meses no miden lo mismo. Era 15 fijo
-hasta el 17/09/2026 (ver más abajo).
+hasta el 17/09/2026 (ver más abajo). **Los tres backends usan el período real
+desde el 28/09/2026**; `pw-hrbackend` seguía con 15 fijo + 1 hasta ese día.
 
 - Las retenciones de ley son 30%, salvo `honorarios` (sin retención).
 - `share_of_basic` es por empresa; `percent_permit` del usuario la pisa si es > 0.
@@ -25,10 +26,62 @@ hasta el 17/09/2026 (ver más abajo).
   **mínimo de B/. 25**. El tope de 200 es la razón de que el mínimo de un
   adelanto extraordinario sea 201 (ver `adelantos-extraordinarios-api-app.md`).
 
-Todo vive en `app/Support/BalanceCalculator.php`. **Ningún consumidor recalcula
-nada por su cuenta**: el home de la app y el bot de WhatsApp llaman ahí. Si se
-duplica, los dos canales terminan mostrándole al mismo usuario dos saldos
-distintos.
+La regla vive en `pw-appbackend/app/Support/BalanceCalculator.php` y es la
+fuente de verdad. **Hoy está implementada tres veces** y hay que tocarlas
+juntas o el mismo empleado ve un número distinto en cada canal:
+
+| Dónde | Archivo | Quién lo ve |
+|---|---|---|
+| `pw-appbackend` | `app/Support/BalanceCalculator.php` | la app y el bot de WhatsApp |
+| `pw-adminbackend` | `app/Services/Salary/BalanceCalculator.php` | panel Admin: ficha del empleado y segmentación de push |
+| `pw-hrbackend` | `app/Services/EmployeeService.php` (`getEmployeeBalance`) | panel Enterprise: la empresa cliente |
+
+El 28/09/2026 las tres estaban dando números distintos para el mismo día: la
+app y Admin contaban un día de más y Enterprise uno de menos. Unificar esto en
+un solo servicio compartido sigue pendiente.
+
+## Días devengados (28/09/2026 — el día del cierre cierra la quincena anterior)
+
+Decisión del dueño, con su propio ejemplo: **"si gano 10 al día, el 2 de octubre
+debo tener 20 disponible"**, y ese mismo día, no al cierre del día.
+
+> **El día del cierre acredita 0 días de la quincena nueva. El día siguiente
+> vale 1, el 2 del mes vale 2, el 17 vale 2.**
+>
+> Y el día del cierre **no se pierde**: pertenece a la quincena que cierra, así
+> que ese día llega a 15/15 (o 16/16), el 100% del medio salario.
+
+Las dos piezas van juntas y por eso se cambiaron a la vez:
+
+1. `diasDevengados` ya no suma 1 cuando cuenta desde el cierre. Sí sigue sumando
+   1 cuando cuenta desde un **alta a mitad de ciclo**, porque el día que la
+   persona entró es un día trabajado.
+2. **La selección del ciclo** pasa a tomar el cierre más reciente
+   *estrictamente* anterior a hoy. Sin esto, el 30 arrancaba el ciclo nuevo en 0
+   y el empleado nunca veía el 100%: cerraba en 14 de 15.
+
+| fecha | ciclo | días | % del medio salario |
+|---|---|---|---|
+| 16 sep | cierre 15 sep | 1 | 7% |
+| 17 sep | cierre 15 sep | 2 | 13% |
+| 29 sep | cierre 15 sep | 14 | 93% |
+| **30 sep** (cierre) | **cierre 15 sep** | **15** | **100%** |
+| 1 oct | cierre 30 sep | 1 | 7% |
+| 2 oct | cierre 30 sep | 2 | 13% |
+| 15 nov | cierre 30 oct, período de 16 | 16 | 100% |
+
+**Qué se acepta a cambio:** todos los empleados ven un día menos que con la
+regla del 17/09, o sea unos 7 puntos porcentuales menos de disponible a media
+quincena, y el día en que cruzan el mínimo de B/. 25 se corre un día.
+
+**Efecto de borde ya conocido:** 13 de las 24 empresas bloquean solicitudes
+entre 3 y 7 días antes del cierre (`log_period_before`), así que para ellas el
+100% del día del cierre no es visible. Las otras 11 no tienen bloqueo y ahí sí
+se usa.
+
+**Para revertir:** `pw-backend:/root/backup-dias-devengados-*.tar.gz`,
+`pw-staging:/root/backup-dias-admin-*.tar.gz` y
+`pw-staging:/root/backup-dias-enterprise-*.tar.gz`.
 
 ## Días devengados (17/09/2026 — el día del cierre ya acredita)
 
