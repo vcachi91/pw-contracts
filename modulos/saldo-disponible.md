@@ -40,6 +40,43 @@ El 28/09/2026 las tres estaban dando números distintos para el mismo día: la
 app y Admin contaban un día de más y Enterprise uno de menos. Unificar esto en
 un solo servicio compartido sigue pendiente.
 
+## Días devengados (30/09/2026 — revertida la parte del día del cierre)
+
+El 30/09, primer día de cierre después del cambio anterior, David reportó a las
+7:26 a.m.: **"la gente tiene saldo y está pidiendo, no deberían tener"**. Tenía
+razón: ese día todos amanecieron con 15/15, el 100% de su medio salario, y el
+bloqueo previo al cierre no cubre el día del cierre mismo. Entraron 8
+solicitudes, 6 las rechazó un admin a mano y 2 quedaron abandonadas; no se
+desembolsó nada.
+
+**Qué se revirtió:** solo la selección del ciclo. El día del cierre vuelve a
+pertenecer al ciclo nuevo y por lo tanto acredita 0.
+
+**Qué se conservó:** el conteo de días, que es lo que el dueño pidió el 28/09.
+El día siguiente al cierre vale 1 y el 2 del mes vale 2.
+
+| fecha | ciclo | días | % del medio salario |
+|---|---|---|---|
+| 30 sep (cierre) | cierre 30 sep | 0 | 0% |
+| 1 oct | cierre 30 sep | 1 | 7% |
+| 2 oct | cierre 30 sep | 2 | 13% |
+| 14 oct | cierre 30 sep | 14 | 93% |
+| 15 oct (cierre) | cierre 15 oct | 0 | 0% |
+
+**Los dos pedidos se contradicen y hay que resolverlo.** El 17/09 el dueño pidió
+que la quincena cerrara en 100%; el 30/09 pidió que el día del cierre no haya
+saldo. Si el 100% solo se alcanza el día del cierre, no se cumplen los dos.
+
+**Salida pendiente de aplicar:** repartir el medio salario entre los días
+**usables** (14 en un período de 15, 15 en uno de 16) en vez de entre los días
+calendario. Así el día anterior al cierre llega a 100%, el día del cierre queda
+en 0 y el conteo diario no cambia. Con el ejemplo del dueño, si la quincena son
+140 y hay 14 días usables, cada día vale 10 exacto.
+
+**Para revertir esta reversión:** `pw-backend:/root/backup-revert-seleccion-*.tar.gz`,
+`pw-staging:/root/backup-revert-seleccion-admin-*.tar.gz` y
+`pw-staging:/root/backup-revert-seleccion-ent-*.tar.gz`.
+
 ## Días devengados (28/09/2026 — el día del cierre cierra la quincena anterior)
 
 Decisión del dueño, con su propio ejemplo: **"si gano 10 al día, el 2 de octubre
