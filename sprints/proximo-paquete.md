@@ -171,6 +171,43 @@ pushes, pero con plantillas aprobadas por Meta.
 - **Programar** envíos.
 - Preferir plantillas de categoría **utility**.
 
+**Lo que ya tenían pensado** (PDF "Envío masivo por WhatsApp", 02/10/2026):
+
+- **"Sin app"** = empleados **activos** con teléfono que **no tienen token de
+  push**, o sea, a los que no les llega ningún aviso por la app. Verificado
+  contra la base el 03/10/2026: 650 activos, 420 con la app, **230 sin la app**
+  (el PDF tenía 221 el 02/10; la diferencia son registros nuevos). "Con app" son
+  los 420.
+- **Costo por mensaje en Panamá:** utility **$0.0163**, marketing **$0.0790**
+  (5 veces más). Una campaña a los 230 sale ~$3.75 como utility y ~$18 como
+  marketing.
+- **Plantillas utility** (informan algo de su propia cuenta): *Saldo
+  disponible*, *Inicio de ciclo*, *Cierre de solicitudes*, *Descuento en
+  planilla*.
+- **Plantillas que caerían como marketing** (invitan o piden instalar algo):
+  *Activación del servicio*, *Invitación a instalar la app*, *Programa de
+  referidos*.
+
+**Lo que eso implica para construirlo:**
+
+- **Las variables se calculan por persona al momento de enviar**, no se
+  escriben a mano: el saldo con el mismo cálculo que usan la app y el bot (así
+  ninguno muestra otro número), y las fechas de cierre o de descuento según la
+  empresa de cada uno.
+- **"Saldo disponible" solo a quien tenga saldo para pedir** (al menos el
+  mínimo de B/. 25). Mandarle "tienes $0 disponibles" a alguien es peor que no
+  mandar nada.
+- **"Consulta el detalle de tu cuenta"**: quien no tiene la app lo consulta
+  respondiendo al mismo WhatsApp, porque el bot ya contesta el saldo. Encaja
+  bien con esta audiencia.
+- **"Descuento en planilla" es por solicitud, no una campaña:** cada persona
+  tiene su monto y su fecha. Encaja mejor como un aviso automático cuando la
+  solicitud se aprueba que como un envío masivo. A decidir.
+- Fuera de los 230 hay otra gente sin la app que el PDF no cubre: **172
+  registrados esperando aprobación** y **186 pre-registros** del kiosco. Son el
+  público natural de *Activación del servicio* e *Invitación a instalar la app*
+  (las de marketing).
+
 **Propuesta para que quede completo:**
 
 - Elegir la plantilla de una lista de las **ya aprobadas** en Twilio, con sus
@@ -196,14 +233,18 @@ pushes, pero con plantillas aprobadas por Meta.
   voluntaria y empezar con audiencias chicas. Vale la pena evaluar un número
   aparte para campañas.
 
+Con 230 destinatarios el riesgo para el número es bajo, pero crece si se suman
+pre-registros y registros pendientes, que nunca escribieron a ese número.
+
 **Decisiones pendientes:**
 
 1. Nombre del módulo: ¿"Campañas WhatsApp"?
-2. **"Sin app" exactamente quiénes son:** ¿empleados registrados que no tienen la
-   app instalada, los pre-registros y registros incompletos que solo dejaron el
-   teléfono, o todos esos?
-3. ¿Quién puede enviar? (¿solo super admin, como los textos legales?)
-4. ¿Número aparte para campañas o el mismo de los códigos?
+2. ¿Se suman como audiencias los **172 registrados esperando aprobación** y los
+   **186 pre-registros**, o solo empleados activos?
+3. ¿"Descuento en planilla" va como aviso automático al aprobar la solicitud, o
+   como campaña?
+4. ¿Quién puede enviar? (¿solo super admin, como los textos legales?)
+5. ¿Número aparte para campañas o el mismo de los códigos?
 
 ---
 
