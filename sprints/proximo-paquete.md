@@ -17,8 +17,9 @@ Estados: **Acordado** · **Pendiente de decisión** · **Hecho, sin publicar**.
 | 1 | Switch de cuentas bancarias por empresa y empleado | Acordado | Sí |
 | 2 | Sucursales por sub-company (+ bug de ids) | Acordado | Sí |
 | 3 | Sucursal obligatoria con "Sin sucursal" | Acordado | Sí (el backend ya cubre a las apps viejas) |
-| 4 | Menú "Marketing" + Campañas de WhatsApp | Pendiente de decisión | No: backend y panel |
-| 5 | Cambiar de empresa a un empleado desde el panel | Pendiente de decisión | No: backend y panel |
+| 4 | Menú "Marketing" + Campañas WhatsApp | **En construcción** (contrato: `modulos/campanas-whatsapp.md`) | No: backend y panel |
+| 5 | Cambiar de empresa a un empleado desde el panel | Acordado (espera OK para construir) | No: backend y panel |
+| 7 | Saldo disponible: un solo cálculo para todos los canales | Pendiente de decisión | No: backends |
 | 6 | Recuperar clave: traba contra doble toque | Hecho, sin publicar | Sí |
 
 ---
@@ -142,7 +143,7 @@ hacerlo antes del cambio. Estado al 03/10/2026:
 
 ---
 
-## 4. Menú "Marketing" y Campañas de WhatsApp — Pendiente de decisión
+## 4. Menú "Marketing" y Campañas WhatsApp — En construcción
 
 Pedido del dueño (03/10/2026).
 
@@ -324,23 +325,36 @@ Twilio quién escribió y guarda por teléfono la fecha del último mensaje
 entrante (tabla nueva, primera carga desde el 01/04/2026). El módulo filtra
 contra esa tabla. Sirve también para un filtro "escribió en los últimos N días".
 
-**Decisiones pendientes:**
+**Decisiones del dueño (03/10/2026):**
 
-1. Nombre del módulo: ¿"Campañas WhatsApp"?
-2. ~~¿Se suman los 172 pendientes y los 186 pre-registros?~~ Resuelto por la
-   regla de §4b: solo quien ya escribió. Queda: ¿los **34 pendientes de
-   aprobación que escribieron** reciben *Activación del servicio*?
-3. ¿"Descuento en planilla" va como aviso automático al aprobar la solicitud, o
-   como campaña?
-4. ¿Quién puede enviar? (¿solo super admin, como los textos legales?)
-5. ¿Número aparte para campañas o el mismo de los códigos? (recomendado: el
-   mismo, porque la audiencia de §4b ya lo conoce; con el plan B de SMS listo)
-6. Tope de frecuencia por persona: ¿1 por semana y 4 al mes?
-7. ¿Se suma la línea de consentimiento al texto legal del registro?
+1. Nombre: **Campañas WhatsApp**. Arriba de la tabla, un resumen de lo gastado
+   a la fecha.
+2. No se manda nada fuera del módulo: toda campaña la arma y la confirma una
+   persona desde el panel (incluidos los 34 pendientes que escribieron).
+3. "Descuento en planilla" **queda fuera**: no es marketing. Venía en el PDF del
+   02/10 como plantilla utility.
+4. Lo usa **solo super_admin**, desde el panel.
+5. **Mismo número** de los códigos. Si la audiencia incluye a quien nunca usó
+   WhatsApp con Payway, se muestra un **aviso de riesgo** antes de enviar, y
+   cada campaña lleva un **nivel de riesgo verde / amarillo / rojo**.
+6. Tope: **1 campaña por persona por semana**.
+7. **Sin** línea de consentimiento nueva en el registro.
+
+Orden fijado por el dueño: Campañas WhatsApp primero, por ser lo menos
+invasivo; el resto espera su autorización. Las reglas completas están en
+`modulos/campanas-whatsapp.md`.
+
+**Hallazgo al arrancar (03/10/2026):** en Twilio no existe ninguna plantilla de
+campaña. Solo están las de avisos sueltos (firma, cuenta aprobada, orden
+aprobada, extraordinario aprobado), las del bot (sin enviar a aprobación) y las
+de los códigos. Las de campaña se crean desde el módulo y esperan la
+aprobación de Meta. Aparte: Meta aprobó `payway_account_approved` (el aviso de
+cuenta aprobada) como **marketing**, así que cada aviso cuesta $0.079 en vez de
+$0.016.
 
 ---
 
-## 5. Cambiar de empresa a un empleado desde el panel — Pendiente de decisión
+## 5. Cambiar de empresa a un empleado desde el panel — Acordado
 
 Pedido del dueño (03/10/2026): se lo piden seguido y hoy lo hace a mano.
 
@@ -382,11 +396,82 @@ empleado. Si hoy se mueve a alguien con historia:
 3. Al mover: elegir empresa, sub-company y sucursal de destino (con la regla de
    §2 y §3), y mostrar un resumen de lo que va a cambiar antes de confirmar.
 
+**Decisiones del dueño (03/10/2026):**
+
+1. Con deuda pendiente **se bloquea el cambio** y el panel le avisa al admin
+   qué deuda lo impide.
+2. Lo pueden hacer **super_admin y admin_ops**.
+
+---
+
+## 7. Saldo disponible: un solo cálculo — Pendiente de decisión
+
+Pedido del dueño (03/10/2026): el saldo está repartido en varios ambientes y
+hay que unificarlo. Preguntó si guardarlo en la base sería lo más estable.
+
+**Dónde se calcula hoy (03/10/2026): cinco copias en tres backends.**
+
+| # | Dónde | Lo usa |
+|---|---|---|
+| 1 | pw-appbackend `HomeController::setBalance` | La app: el home y el rechazo de montos al pedir |
+| 2 | pw-appbackend `WhatsAppChatbotController::getUserBalance` | El bot, cuando le preguntan el saldo |
+| 3 | pw-appbackend `AuthService::getEmployeeBalance` | Lo que devuelve el login |
+| 4 | pw-adminbackend `Services/Salary/BalanceCalculator` | El panel, los filtros de push y Campañas WhatsApp |
+| 5 | pw-hrbackend `EmployeeService` | El panel Enterprise |
+
+Las copias 1 y 2 comparten piezas de `Support/BalanceCalculator`; la 4 y la 5
+cuentan los días por su cuenta. Comparadas el 03/10/2026, la de la app y la del
+panel dan lo mismo en 646 de 650 activos; las 4 diferencias son el tope de
+B/. 200, que el panel no aplica. Pero cada cambio de regla (17/09, 28/09,
+30/09) hubo que repetirlo en cada copia, y una copia olvidada da otro número.
+
+**Propuesta: una sola fórmula, y un saldo guardado que todos leen.**
+
+1. **Una sola fórmula, en pw-appbackend**, que es la que autoriza el retiro.
+   Las otras copias se borran.
+2. **Tabla `saldos`** en la base `app`, una fila por empleado: disponible,
+   devengado, ya pedido, tope aplicado, días, ciclo, si está bloqueado y por
+   qué (cierre de planilla, empresa congelada, despedido), `calculado_at` y la
+   versión de la regla.
+3. **Se recalcula por eventos:** cuando se crea, aprueba, cancela o rechaza una
+   solicitud; cuando cambian el salario, las deducciones, la empresa o el
+   porcentaje; cuando se congela o descongela la empresa. Además hay una pasada
+   a las 00:05 para todos, porque el saldo sube cada día aunque nadie haga nada.
+4. **Panel, Enterprise, bot, push y Campañas WhatsApp leen la tabla.** Ninguno
+   calcula.
+5. **Al pedir un adelanto, el backend recalcula en vivo** y no confía en la
+   tabla, porque es el único momento en que un número viejo cuesta plata. Si el
+   número en vivo difiere del guardado, se registra la diferencia: es la
+   alarma de que alguna actualización se perdió.
+6. **Historial diario** (`saldos_historial`, una foto por empleado y día) para
+   contestar reclamos ("ayer la app me decía 80") y ver el efecto de cada
+   cambio de regla.
+
+**Por qué no alcanza con guardarlo:** guardar el saldo sin una fórmula única
+solo mueve el problema. Si dos procesos escriben la tabla con reglas
+distintas, el número depende de quién escribió último. La estabilidad la da la
+fórmula única; la tabla suma velocidad, una sola lectura para todos y
+trazabilidad.
+
+**Alternativas descartadas:**
+
+- *Que panel y Enterprise le pregunten a pw-appbackend por API.* Ata los
+  servidores entre sí: si pw-backend se cae, el panel se queda sin saldos. La
+  tabla los desacopla.
+- *Un paquete PHP compartido por los tres repos.* Cada cambio de regla sigue
+  siendo tres despliegues, y un servidor sin actualizar vuelve a dar otro
+  número.
+
+**Orden sugerido:** (1) la tabla y el llenado, sin que nadie la lea todavía;
+(2) una semana comparando la tabla contra el cálculo en vivo de cada canal;
+(3) pasar panel, Enterprise, bot y campañas a leer la tabla; (4) borrar las
+copias. Es solo backend: no necesita versión de la app.
+
 **Decisiones pendientes:**
 
-1. ¿Se bloquea el cambio con deuda pendiente, o se permite y la deuda queda con
-   la empresa vieja?
-2. ¿Quién puede hacerlo? (¿admin de operaciones o solo super admin?)
+1. ¿Entra en este sprint o en el siguiente?
+2. ¿Se resuelve antes la contradicción del 93 % de la quincena? Conviene: si
+   no, se guarda en la tabla una regla que después hay que volver a cambiar.
 
 ---
 
