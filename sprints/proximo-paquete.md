@@ -244,8 +244,11 @@ número. Todo apunta a que nadie tenga motivo para bloquear.
 
 **Lo que más protege — fuera del módulo:**
 
-1. **Número aparte para campañas.** Si algo sale mal, cae el número de campañas
-   y no el de los códigos ni el bot. Es la medida que más reduce el daño posible.
+1. **Número aparte para campañas — descartado por la regla de §4b.** Aislaría
+   los códigos y el bot, pero la gente le escribió al número actual: un número
+   nuevo le llegaría como un desconocido, que es justo lo que más se bloquea.
+   Con la audiencia de §4b conviene mandar desde el **mismo número**, y cubrir
+   los códigos con el plan B del punto 2.
 2. **Plan B para los códigos, ya existe:** el canal del OTP sale de
    `OTP_CHANNEL` en el `.env` de pw-appbackend (hoy no está puesto, así que va
    por `whatsapp`). Con `OTP_CHANNEL=sms` los códigos salen por SMS sin tocar
@@ -280,21 +283,58 @@ número. Todo apunta a que nadie tenga motivo para bloquear.
 con su nombre, sin lenguaje de promoción ni links acortados. Además de ser lo
 que Meta acepta como utility, es lo que la gente no reporta.
 
-**Orden sugerido para las audiencias:** primero los 230 activos sin la app con
-plantillas utility. Los 172 pendientes de aprobación y los 186 pre-registros,
-con plantillas de marketing, recién cuando las primeras campañas mantengan el
-número en buena calidad.
+### 4b. Audiencia: solo quien ya le escribió al número (regla del dueño, 03/10/2026)
+
+El dueño fijó la regla: **WhatsApp solo a quien ya usó WhatsApp con Payway** —
+se registró por WhatsApp, pidió un adelanto por WhatsApp, o le escribió al bot.
+Es la medida más fuerte contra bloqueos: conoce el número y ya conversó con él.
+
+**Dónde está ese dato.** La base solo sabe quién se registró
+(`users.signup_source = 'whatsapp'`) o pidió (`orders.source = 'whatsapp'`)
+por WhatsApp. **Los mensajes que la gente le manda al bot no se guardan**: el
+bot solo usa caché para la conversación en curso. El historial completo está en
+Twilio. Contado el 03/10/2026 desde Twilio (solo lectura): 9.007 mensajes
+entrantes desde el 01/04/2026, de **398 teléfonos distintos**; 148 escribieron
+en los últimos 30 días.
+
+**Cruce con usuarios (03/10/2026)**, contando cualquiera de las tres formas:
+
+| Estado | Con app | Sin app |
+|---|---|---|
+| Activos | 177 | **94** |
+| Pendientes de aprobación | — | 34 |
+| Despedidos | 21 | 9 |
+| Inactivos | 9 | 5 |
+
+Más 51 teléfonos que escribieron y no son usuarios. Ninguno es pre-registro.
+
+**Qué cambia en las audiencias:**
+
+- "Sin app" pasa de 230 a **94**. Los otros 136 activos sin app nunca le
+  escribieron al número y quedan fuera.
+- "Con app" que escribieron: 177. "Ambos": 271.
+- Los 186 pre-registros quedan fuera: ninguno escribió.
+- Los 34 pendientes de aprobación que escribieron podrían recibir *Activación
+  del servicio*. A decidir.
+- Despedidos e inactivos nunca, aunque hayan escrito.
+
+**Cómo saberlo sin tocar el bot.** El dueño pidió no cambiar el flujo de
+WhatsApp, así que el bot no se modifica. Una tarea programada lee cada noche de
+Twilio quién escribió y guarda por teléfono la fecha del último mensaje
+entrante (tabla nueva, primera carga desde el 01/04/2026). El módulo filtra
+contra esa tabla. Sirve también para un filtro "escribió en los últimos N días".
 
 **Decisiones pendientes:**
 
 1. Nombre del módulo: ¿"Campañas WhatsApp"?
-2. ¿Se suman como audiencias los **172 registrados esperando aprobación** y los
-   **186 pre-registros**, o solo empleados activos?
+2. ~~¿Se suman los 172 pendientes y los 186 pre-registros?~~ Resuelto por la
+   regla de §4b: solo quien ya escribió. Queda: ¿los **34 pendientes de
+   aprobación que escribieron** reciben *Activación del servicio*?
 3. ¿"Descuento en planilla" va como aviso automático al aprobar la solicitud, o
    como campaña?
 4. ¿Quién puede enviar? (¿solo super admin, como los textos legales?)
-5. ¿Número aparte para campañas o el mismo de los códigos? (recomendado:
-   aparte, ver §4a)
+5. ¿Número aparte para campañas o el mismo de los códigos? (recomendado: el
+   mismo, porque la audiencia de §4b ya lo conoce; con el plan B de SMS listo)
 6. Tope de frecuencia por persona: ¿1 por semana y 4 al mes?
 7. ¿Se suma la línea de consentimiento al texto legal del registro?
 
