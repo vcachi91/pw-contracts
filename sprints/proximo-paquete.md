@@ -17,7 +17,7 @@ Estados: **Acordado** · **Pendiente de decisión** · **Hecho, sin publicar**.
 | 1 | Switch de cuentas bancarias por empresa y empleado | Acordado | Sí |
 | 2 | Sucursales por sub-company (+ bug de ids) | Acordado | Sí |
 | 3 | Sucursal obligatoria con "Sin sucursal" | Acordado | Sí (el backend ya cubre a las apps viejas) |
-| 4 | Menú "Marketing" + Campañas WhatsApp | **Publicado 03/10/2026**, sin campañas enviadas todavía (contrato: `modulos/campanas-whatsapp.md`) | No: backend y panel |
+| 4 | Menú "Marketing" + Campañas WhatsApp | **Publicado 03/10/2026**, oculto del menú hasta nuevo aviso del dueño (se entra por `/campanas-whatsapp`); sin campañas enviadas (contrato: `modulos/campanas-whatsapp.md`) | No: backend y panel |
 | 5 | Cambiar de empresa a un empleado desde el panel | Acordado (espera OK para construir) | No: backend y panel |
 | 7 | Saldo disponible: un solo cálculo para todos los canales | Pendiente de decisión | No: backends |
 | 6 | Recuperar clave: traba contra doble toque | Hecho, sin publicar | Sí |
