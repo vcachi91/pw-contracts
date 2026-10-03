@@ -236,6 +236,55 @@ pushes, pero con plantillas aprobadas por Meta.
 Con 230 destinatarios el riesgo para el número es bajo, pero crece si se suman
 pre-registros y registros pendientes, que nunca escribieron a ese número.
 
+### 4a. Medidas contra bloqueos (pedido del dueño, 03/10/2026)
+
+Meta no banea por volumen: baja la calidad del número cuando la gente
+**bloquea o reporta**, y con calidad baja limita los envíos o suspende el
+número. Todo apunta a que nadie tenga motivo para bloquear.
+
+**Lo que más protege — fuera del módulo:**
+
+1. **Número aparte para campañas.** Si algo sale mal, cae el número de campañas
+   y no el de los códigos ni el bot. Es la medida que más reduce el daño posible.
+2. **Plan B para los códigos, ya existe:** el canal del OTP sale de
+   `OTP_CHANNEL` en el `.env` de pw-appbackend (hoy no está puesto, así que va
+   por `whatsapp`). Con `OTP_CHANNEL=sms` los códigos salen por SMS sin tocar
+   código. Falta confirmar que el servicio de Twilio Verify tenga SMS habilitado
+   y probarlo **solo con el teléfono del dueño**.
+3. **Consentimiento en el registro:** sumar al texto legal del registro (se edita
+   en el panel y cada firma guarda versión) una línea tipo "acepto recibir por
+   WhatsApp avisos sobre mi cuenta". Desde ahí queda registrado quién aceptó.
+4. **Perfil del remitente completo:** nombre Payway, logo y descripción, para
+   que la persona reconozca quién le escribe y no lo reporte como spam.
+
+**Lo que el módulo hace solo, sin depender de quien envía:**
+
+5. **Baja con un toque:** cada plantilla lleva un botón "No recibir más". Quien
+   lo toque, o escriba BAJA/STOP, queda en una lista de exclusión que respetan
+   todas las campañas siguientes. Es lo que más evita bloqueos: la gente bloquea
+   cuando no encuentra cómo dejar de recibir.
+6. **Tope de frecuencia por persona:** máximo 1 campaña por semana y 4 al mes
+   (a confirmar). La audiencia descuenta a quien ya llegó al tope y la vista
+   previa lo muestra.
+7. **Tandas y horario:** envío en tandas (p. ej. 50 cada 10 minutos), solo de
+   8:00 a 19:00 hora de Panamá. Lo programado fuera de horario espera.
+8. **Freno automático:** si en una tanda fallan o rebotan más de un umbral
+   (p. ej. 10 %), la campaña se pausa sola y avisa. Los números que fallan
+   seguido quedan fuera de los envíos siguientes.
+9. **Audiencia limpia:** solo personas con relación con Payway; nunca
+   despedidos ni inactivos.
+10. **Primera campaña de prueba chica:** 20–30 personas, revisar la calidad del
+    número en Meta al día siguiente, y recién ahí la audiencia completa.
+
+**Contenido de las plantillas:** sobre algo de la persona (su saldo, su ciclo),
+con su nombre, sin lenguaje de promoción ni links acortados. Además de ser lo
+que Meta acepta como utility, es lo que la gente no reporta.
+
+**Orden sugerido para las audiencias:** primero los 230 activos sin la app con
+plantillas utility. Los 172 pendientes de aprobación y los 186 pre-registros,
+con plantillas de marketing, recién cuando las primeras campañas mantengan el
+número en buena calidad.
+
 **Decisiones pendientes:**
 
 1. Nombre del módulo: ¿"Campañas WhatsApp"?
@@ -244,7 +293,10 @@ pre-registros y registros pendientes, que nunca escribieron a ese número.
 3. ¿"Descuento en planilla" va como aviso automático al aprobar la solicitud, o
    como campaña?
 4. ¿Quién puede enviar? (¿solo super admin, como los textos legales?)
-5. ¿Número aparte para campañas o el mismo de los códigos?
+5. ¿Número aparte para campañas o el mismo de los códigos? (recomendado:
+   aparte, ver §4a)
+6. Tope de frecuencia por persona: ¿1 por semana y 4 al mes?
+7. ¿Se suma la línea de consentimiento al texto legal del registro?
 
 ---
 
