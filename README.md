@@ -26,6 +26,7 @@ primero**, en un commit que explique por qué. Los repos se alinean después.
 | `produccion.md` | Los tres servidores: cómo se entra, qué directorio está en vivo y cuál es un resto apagado, dónde está la base, cómo se despliega. **Leer antes de tocar un servidor.** |
 | `modulos/` | Contratos vivos. Módulos en construcción o en producción que se siguen tocando. |
 | `modulos/saldo-disponible.md` | Cómo se devenga el saldo EWA y por qué. **Leer antes de tocar cualquier cosa que mueva el disponible del empleado.** |
+| `sprints/proximo-paquete.md` | Lo acordado para la próxima versión de la app, con su estado. Documento vivo hasta cerrar el sprint. |
 | `historicos/` | Contratos ya implementados y cerrados. Se conservan porque explican *por qué* el código es como es. No se editan. |
 
 ## Cómo se usa con Claude Code
