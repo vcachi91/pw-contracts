@@ -442,8 +442,12 @@ tomar y se compara.
 - **No activos con saldo mayor que cero:** la app muestra 52, el bot 83, el
   panel y Enterprise 80. Las copias no tratan igual a despedidos, inactivos y
   pendientes.
-- Enterprise toma las deducciones de la ficha de `hr` (310 empleados las
-  tienen); la app, de su propia base. Hoy coinciden, pero son dos fuentes.
+- Las deducciones salen de un solo lugar para todos: la ficha de `hr`
+  (`salary_component`, 310 empleados las tienen). La diferencia está en cómo
+  se suman: la app descarta la clave `Basic` y los componentes de prueba; el
+  panel y Enterprise no. De ahí salen #999 y #4634. #7472 es de honorarios y
+  Enterprise le retiene igual el 30 %. En los tres, el número bueno es el de
+  la app.
 
 **Respaldo previo (03/10/2026, 22:58), pedido por el dueño:**
 `/root/respaldo-antes-saldo-unificado-20261003-2258/` en pw-staging (código de
