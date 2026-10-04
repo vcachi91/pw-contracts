@@ -27,7 +27,7 @@ desde el 28/09/2026**; `pw-hrbackend` seguía con 15 fijo + 1 hasta ese día.
   adelanto extraordinario sea 201 (ver `adelantos-extraordinarios-api-app.md`).
 
 La regla vive en `pw-appbackend/app/Support/BalanceCalculator.php` y es la
-fuente de verdad. **Hoy está implementada tres veces** y hay que tocarlas
+fuente de verdad. **Hoy está implementada tres veces** (cuatro contando el bot, que comparte piezas con la app; ver "Saldo unificado" al final) y hay que tocarlas
 juntas o el mismo empleado ve un número distinto en cada canal:
 
 | Dónde | Archivo | Quién lo ve |
@@ -204,3 +204,89 @@ uno al final — se mueve la ventana, no se agranda.
 `log_period_after` está en 0 en todas las empresas activas; `log_period_before`
 va de 3 a 8 según la empresa. Por eso las solicitudes se apagan hacia el d11–d14
 y no por un problema de acumulación.
+
+## Saldo unificado: una sola fórmula y la tabla `saldos` (desde 03/10/2026)
+
+Pedido del dueño (03/10/2026): el saldo estaba calculado en cuatro lugares (el
+Home de la app, el bot, el panel y Enterprise) y cada cambio de regla había
+que repetirlo en todos. Se unifica **por etapas**, sin publicar la app y sin
+que cambie ningún número hasta haberlo comparado.
+
+**La fórmula única** vive en `pw-appbackend/app/Support/Saldo/CalculadoraSaldo.php`.
+Reproduce rama por rama lo que hoy devuelve el Home, incluso lo raro (ver
+"Rarezas heredadas"). Si una regla del saldo cambia, se cambia ahí y se sube
+`CalculadoraSaldo::REGLA`.
+
+### Etapas
+
+| # | Qué | Estado |
+|---|---|---|
+| 1 | `CalculadoraSaldo`, tablas `saldos` y `saldos_historial`, `saldos:recalcular` cada 10 minutos. **Nadie lee la tabla.** | Construida el 03/10/2026 |
+| 2 | Una semana de `saldos:verificar` (cada hora) sin diferencias, más la comparación contra el panel y Enterprise. | Pendiente |
+| 3 | El Home y el bot llaman a `CalculadoraSaldo`; el panel, Enterprise, push y Campañas WhatsApp leen `saldos`. Recálculo al crear o cambiar una solicitud. | Pendiente |
+| 4 | Borrar las copias viejas. | Pendiente |
+
+**Regla de trabajo del dueño:** antes de cada cambio se guarda una foto de
+los saldos de todos los empleados en todos los canales, y después se compara.
+
+### Tabla `saldos` (base `app`), una fila por empleado
+
+| Columna | Qué es |
+|---|---|
+| `disponible` | Lo que la app muestra como saldo. 0 en cierre de planilla y para un despedido. |
+| `para_solicitud` | `disponible` recortado al tope por solicitud (B/. 200). |
+| `puede` | Puede pedir ahora: cuenta activa, sin ningún bloqueo y con el mínimo (B/. 25). **Es la columna que deben usar los lectores.** |
+| `puede_app` | `can_progress` tal como lo devuelve hoy el Home. Solo sirve para comparar en la etapa 2. |
+| `bloqueo` | Por qué no puede, en una palabra (ver abajo). `null` si puede. |
+| `aviso` | El texto que muestra la app. |
+| `dias_devengados`, `dias_periodo`, `ciclo_inicio`, `proximo_cierre` | Con qué días se calculó. |
+| `salario_bruto`, `neto_quincenal`, `deducciones`, `porcentaje`, `ya_solicitado` | Con qué plata se calculó. |
+| `regla` | Versión de la regla. |
+| `calculado_at` | Cuándo. Un lector que encuentre un valor de hace más de 30 minutos debe desconfiar. |
+
+`bloqueo`, en orden de prioridad: `despedido` · `no_activo` (inactivo o
+pendiente) · `sin_aprobar` (sin empresa asignada) · `sin_perfil` ·
+`sin_ciclo` · `cierre_planilla` · `empresa_congelada` · `bajo_minimo` · `otro`.
+
+`saldos_historial` guarda una fila por empleado y día: el primer saldo del día
+(`disponible_inicio`) y el último (`disponible`).
+
+### Al pedir un adelanto se calcula en vivo
+
+La tabla es para **mostrar**. `RequestController` sigue calculando en el
+momento (`HomeController::limitesParaSolicitar`) y nunca autoriza plata con un
+valor guardado.
+
+### Rarezas heredadas (se reproducen igual; candidatas a limpiarse en la etapa 4)
+
+- **Bloqueo viejo** (`Controller::checkLockPeriodBeforeAfter`): arma una
+  ventana alrededor del último ciclo cargado más un mes. Con 24 meses de ciclos
+  cargados casi nunca cae en hoy. El bloqueo real es el de cierre de planilla.
+- **"Ya solicitado"** suma las solicitudes desde el cierre hasta un mes
+  después, no hasta el próximo cierre.
+- **El Home no mira la empresa congelada**: muestra saldo y deja entrar a
+  pedir, y recién `RequestController` rechaza. En la tabla ya sale como
+  `bloqueo = empresa_congelada` y `puede = 0`.
+- **Inactivos y pendientes con empresa asignada** tienen un saldo calculado
+  (38 inactivos y 14 pendientes el 03/10/2026) aunque no pueden entrar a la
+  app. En la tabla quedan con `puede = 0` y `bloqueo = no_activo`.
+
+### Qué mostró la línea de base (03/10/2026, 958 usuarios, 651 activos)
+
+- App y bot: iguales en los 651 activos.
+- Panel: 649 de 651. Enterprise: 648 de 651.
+- Las tres diferencias son errores del panel y de Enterprise, no de la app:
+  dos empleados (#999, #4634) tienen en `salary_component` la clave `Basic`,
+  que es un ingreso, y el panel y Enterprise la restan como deducción; uno
+  (#7472) es de honorarios y Enterprise le retiene igual el 30 %. La app ya
+  maneja los dos casos (`BalanceCalculator::deduccionesDesdeComponentes` e
+  `isHonorarios`). Al pasar a leer la tabla, esos tres suben al número de la app.
+- El bot le calcula saldo a 31 despedidos, pero nunca se lo muestra: solo
+  atiende a cuentas activas.
+
+### Pruebas de la etapa 1 (03/10/2026), antes de desplegar
+
+`CalculadoraSaldo` contra el Home y contra el bot, para los 958 usuarios:
+0 diferencias hoy y 0 en cada una de diez fechas simuladas (16/09, 29/09,
+30/09, 01/10, 14/10, 15/10, 16/10, 30/10, 31/10 y 15/11), que cubren días de
+cierre, el día siguiente y quincenas de 15 y de 16 días.
