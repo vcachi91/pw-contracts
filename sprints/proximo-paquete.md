@@ -14,7 +14,7 @@ Estados: **Acordado** · **Pendiente de decisión** · **Hecho, sin publicar**.
 
 | # | Ítem | Estado | ¿Necesita versión de app? |
 |---|---|---|---|
-| 1 | Switch de cuentas bancarias por empresa y empleado | Acordado | Sí |
+| 1 | Switch de cuentas bancarias por empresa y empleado | **Backend y panel construidos (04/10), sin desplegar**; falta la app y la decisión del bot (`modulos/cuentas-bancarias-app.md`) | Sí |
 | 2 | Sucursales por sub-company (+ bug de ids) | Acordado | Sí |
 | 3 | Sucursal obligatoria con "Sin sucursal" | Acordado | Sí (el backend ya cubre a las apps viejas) |
 | 4 | Menú "Marketing" + Campañas WhatsApp | **Publicado 03/10/2026**, oculto del menú hasta nuevo aviso del dueño (se entra por `/campanas-whatsapp`); sin campañas enviadas (contrato: `modulos/campanas-whatsapp.md`) | No: backend y panel |
