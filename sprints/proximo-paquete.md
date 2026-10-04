@@ -404,26 +404,56 @@ empleado. Si hoy se mueve a alguien con historia:
 
 ---
 
-## 7. Saldo disponible: un solo cálculo — Pendiente de decisión
+## 7. Saldo disponible: un solo cálculo — Respaldo y línea de base hechos; construcción por etapas
 
 Pedido del dueño (03/10/2026): el saldo está repartido en varios ambientes y
 hay que unificarlo. Preguntó si guardarlo en la base sería lo más estable.
 
-**Dónde se calcula hoy (03/10/2026): cinco copias en tres backends.**
+**Dónde se calcula hoy (03/10/2026): cuatro copias en tres backends.**
 
 | # | Dónde | Lo usa |
 |---|---|---|
 | 1 | pw-appbackend `HomeController::setBalance` | La app: el home y el rechazo de montos al pedir |
 | 2 | pw-appbackend `WhatsAppChatbotController::getUserBalance` | El bot, cuando le preguntan el saldo |
-| 3 | pw-appbackend `AuthService::getEmployeeBalance` | Lo que devuelve el login |
-| 4 | pw-adminbackend `Services/Salary/BalanceCalculator` | El panel, los filtros de push y Campañas WhatsApp |
-| 5 | pw-hrbackend `EmployeeService` | El panel Enterprise |
+| 3 | pw-adminbackend `Services/Salary/BalanceCalculator` | El panel, los filtros de push y Campañas WhatsApp |
+| 4 | pw-hrbackend `EmployeeService::getEmployeeBalance` | El panel Enterprise |
 
-Las copias 1 y 2 comparten piezas de `Support/BalanceCalculator`; la 4 y la 5
-cuentan los días por su cuenta. Comparadas el 03/10/2026, la de la app y la del
-panel dan lo mismo en 646 de 650 activos; las 4 diferencias son el tope de
-B/. 200, que el panel no aplica. Pero cada cambio de regla (17/09, 28/09,
-30/09) hubo que repetirlo en cada copia, y una copia olvidada da otro número.
+(Una versión anterior de este documento contaba una quinta copia en el login
+de pw-appbackend. No existe: era un comentario.)
+
+Las copias 1 y 2 comparten piezas de `Support/BalanceCalculator`; la 3 y la 4
+cuentan los días por su cuenta. Cada cambio de regla (17/09, 28/09, 30/09) hubo
+que repetirlo en cada copia, y una copia olvidada da otro número.
+
+**Foto de saldos del 03/10/2026, 23:00** (958 usuarios, 651 activos), tomada
+con las cuatro copias. Es la línea de base: después de cada cambio se vuelve a
+tomar y se compara.
+
+| Copia | Activos que coinciden con la app (±1) | Suma del disponible |
+|---|---|---|
+| App | — | B/. 18.377 |
+| Bot | 651 de 651 | B/. 18.377 |
+| Panel | 649 de 651 | B/. 18.325 |
+| Enterprise | 648 de 651 | B/. 18.313 |
+
+- Los tres activos que difieren: #999 (app 39, panel y Enterprise 0), #4634
+  (app 45, los otros 32) y #7472 (app 40, Enterprise 28). Hay que explicar cada
+  uno antes de unificar.
+- **No activos con saldo mayor que cero:** la app muestra 52, el bot 83, el
+  panel y Enterprise 80. Las copias no tratan igual a despedidos, inactivos y
+  pendientes.
+- Enterprise toma las deducciones de la ficha de `hr` (310 empleados las
+  tienen); la app, de su propia base. Hoy coinciden, pero son dos fuentes.
+
+**Respaldo previo (03/10/2026, 22:58), pedido por el dueño:**
+`/root/respaldo-antes-saldo-unificado-20261003-2258/` en pw-staging (código de
+admin-api y enterprise-api, bases `app` y `hr`, fotos de saldos del panel y de
+Enterprise) y en pw-backend (código de app-api, foto de la app y del bot).
+Probado: el código extraído es idéntico al que está en vivo, y la copia de las
+bases se restauró en bases de prueba con las 104 tablas y las mismas filas.
+
+**Regla de trabajo (dueño, 03/10/2026):** probar varias veces y por todos los
+canales, y guardar los saldos antes de cada cambio para comparar después.
 
 **Propuesta: una sola fórmula, y un saldo guardado que todos leen.**
 
