@@ -70,20 +70,24 @@ la app hubiera quitado el botón en marzo de 2026.
 - **App:** `RequestController::isMyAccountId` exige `verify_enterprise = 1`. La
   app ya solo listaba las verificadas; esto cierra el camino de llamar a la API
   a mano con el id de una cuenta sin verificar.
-- **Bot de WhatsApp: no se toca** (decisión del dueño, 04/10/2026). Por
-  WhatsApp solo se carga una cuenta al **registrarse**; un empleado activo no
-  puede agregar ni cambiar cuentas por el bot. Por eso el switch aplica **solo
-  a la app**, y el bot sigue ofreciendo para retirar todas las cuentas del
-  empleado, como hasta ahora.
+- **Bot de WhatsApp:** desde el 04/10/2026 (00:43) ofrece para retirar solo
+  cuentas **verificadas, activas y sin borrar**, las mismas que la app. Antes
+  ofrecía todas: en los 60 días previos salieron 11 adelantos de 5 personas a
+  cuentas sin verificar. Es únicamente la consulta que lista las cuentas en
+  `WhatsAppChatbotController`; mensajes y pasos no cambiaron.
 
-  **Lo que eso deja abierto, para tenerlo presente al encender el switch:** el
-  bot no mira si la cuenta está verificada. En los 60 días previos salieron 11
-  adelantos de 5 personas por el bot a cuentas sin verificar (las que cargaron
-  al registrarse). Con el switch encendido en una empresa, una cuenta agregada
-  por la app queda sin verificar para la app, pero el bot igual la ofrece. Si
-  eso llega a ser un problema, el cambio es de una consulta en
-  `WhatsAppChatbotController` (se probó el 04/10/2026: de 530 activos con
-  cuentas, 8 no tienen ninguna verificada y solo uno de ellos usa el bot).
+  Historia de la decisión, el mismo 04/10: el dueño primero aceptó el cambio,
+  después pidió no tocar el bot (se revirtió) y al final lo pidió
+  expresamente: *"aplica lo de cuentas verificadas para whatsapp también, solo
+  eso"*. Por WhatsApp solo se carga una cuenta al registrarse; un empleado
+  activo no puede agregar ni cambiar cuentas por el bot.
+
+  **Efecto al aplicarlo:** de 534 activos con alguna cuenta, 471 ven lo mismo
+  y 63 ven menos (las sin verificar o borradas). Doce se quedan sin ninguna
+  cuenta en el bot: 8 tienen cuentas sin verificar (#7555, #7399, #7685,
+  #7706, #7758, #8027, #8031, #8072) y 4 solo tienen cuentas borradas (#4, #33,
+  #34, #4610). De los doce, solo #7555 (Panafoto) usa el bot: 3 adelantos, el
+  último el 03/10/2026. Hay que verificarle la cuenta en el panel.
 ## 5. Panel admin
 
 - **Empresa** (ficha de la empresa): tarjeta "Cuentas bancarias desde la app"
@@ -109,7 +113,7 @@ la app hubiera quitado el botón en marzo de 2026.
    nada cambia para nadie, y el endpoint de agregar queda cerrado.
 2. Versión de la app.
 3. Forzar actualización.
-4. Encender por empresa o por persona. Tener presente la nota del bot en §4.
+4. Encender por empresa o por persona.
 
 ## 8. Estado
 
