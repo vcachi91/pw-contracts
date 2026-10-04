@@ -234,9 +234,8 @@ cada cambio. Se hizo todo la noche del 03 al 04/10/2026.
 Si existe, no tiene error y se calculó hace menos de 30 minutos, usan su
 `disponible` y sus `dias_devengados`. Si no, caen al cálculo local de antes.
 Las etiquetas (`payday`, `subtitle_body`, `megalodon`) siguen saliendo del
-cálculo local. **Consecuencia:** un cambio hecho en el panel (salario,
-deducciones, porcentaje) tarda hasta 10 minutos en verse en el saldo del panel.
-En la app y en el bot se ve al instante, porque calculan en vivo.
+cálculo local. Si la persona tuvo un movimiento después de ese cálculo, tampoco usan la fila
+(ver "La demora de la tabla" más abajo).
 
 **Qué cambió para la gente al pasar a la fórmula única:**
 
@@ -324,11 +323,20 @@ cierre, el día siguiente y quincenas de 15 y de 16 días.
 | Los cuatro canales (00:05) | App, bot, panel y Enterprise para los 651 activos. | Iguales, salvo #7249 (ver abajo) |
 | Tráfico real | Home abierto por empleados y una solicitud real de B/. 45 (#3221, 00:02:51) con el código nuevo. | Sin errores en los tres backends |
 
-**La demora de la tabla, vista en vivo:** #7249 pidió B/. 45 a las 00:02:51. La
-app pasó a mostrarle 0 al instante; el panel siguió mostrando 45 hasta el
-recálculo de las 00:10. Mejora pendiente: recalcular la fila de la persona en
-el momento en que confirma o cancela una solicitud. No se hizo esta noche
-porque ese camino manda correos y no se puede probar sin enviar uno.
+**La demora de la tabla, y cómo se cerró (04/10/2026, 00:10):** #7249 pidió
+B/. 45 a las 00:02:51. La app pasó a mostrarle 0 al instante, pero el panel
+siguió en 45 hasta el recálculo siguiente, y el dueño creyó que tenía 90. Nunca
+pudo pedir de más: se probó en el momento y el backend rechazó 25 y 45 con
+"No tienes transacciones disponibles". Se cerró con dos cosas:
+
+- **pw-appbackend:** `Order::saved` y `Order::deleted` llaman a
+  `SaldoGuardado::refrescar()`, que recalcula la fila de esa persona en el
+  momento (~20 ms). Cubre todo lo que pasa por la app y el bot. Si falla no
+  rompe la solicitud: queda en el log y lo corrige la pasada de 10 minutos.
+- **Panel y Enterprise:** si la persona tiene una solicitud o un cambio en
+  `user_details` posterior a `calculado_at`, no usan la fila y calculan en el
+  momento. Cubre lo que se aprueba, cancela o edita desde el panel, que es otra
+  aplicación y no dispara el refresco.
 
 **Un caso más que cambió en el panel y Enterprise:** #7260 pasó de 8 a 9. Su
 cuenta da 8,50 exactos y cada copia redondeaba para un lado. Ahora vale el
