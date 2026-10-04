@@ -130,3 +130,22 @@ la cuenta de otra persona se rechaza (409) sin tocar su verificación; *bloquear
 gana sobre la empresa encendida y *permitir* sobre la apagada; el despedido
 nunca puede. La respuesta del Home solo sumó `bank_accounts.can_add`, y pedir
 un adelanto da lo mismo que antes.
+## 9. Agregados del 04/10/2026
+
+- **Cuentas pendientes a la vista del empleado.** `saved-accounts-by-user`
+  devuelve `pending_accounts`: las cuentas suyas sin verificar, con la misma
+  forma que `data` más `status_label: "Pendiente de aprobación"`. Van **aparte**
+  de `data` porque `data` es la lista con la que la app elige a qué cuenta
+  retirar. Sin cuentas verificadas pero con alguna pendiente, responde 200 con
+  `data: []` (un 404 la app lo trata como error y no lee el cuerpo). La app las
+  muestra en Destinatarios, atenuadas y con la etiqueta.
+- **Empleado: switch en vez de selector**, con el mismo aspecto que el de la
+  empresa. Sin tocar sigue a la empresa (`inherit`); al moverlo queda como
+  excepción (`allow` / `block`); "Seguir a la empresa" la quita.
+- **Página Accounts del panel.** `GET /admin/accounts` pagina y filtra en el
+  servidor: `page`, `per_page` (10–100), `search` (nombre, teléfono, número de
+  cuenta, banco o empresa), `status` (`pending` / `verified` / `all`) y
+  `company_id`; devuelve `counts` para las pestañas. Antes ignoraba los
+  parámetros y devolvía las más de 800 cuentas juntas. Solo lista cuentas
+  vigentes (vínculo activo, sin borrar). `POST /admin/accounts/verify` exige
+  `accounts.verify` (super_admin, admin_ops, admin_finance).
