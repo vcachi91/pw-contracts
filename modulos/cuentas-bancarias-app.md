@@ -70,14 +70,20 @@ la app hubiera quitado el botón en marzo de 2026.
 - **App:** `RequestController::isMyAccountId` exige `verify_enterprise = 1`. La
   app ya solo listaba las verificadas; esto cierra el camino de llamar a la API
   a mano con el id de una cuenta sin verificar.
-- **Bot de WhatsApp:** **PENDIENTE DE DECISIÓN DEL DUEÑO.** Hoy el bot ofrece
-  **todas** las cuentas del usuario: sin verificar, inactivas y hasta borradas.
-  En los últimos 60 días salieron 11 adelantos de 5 personas por el bot a
-  cuentas sin verificar. Mientras eso siga así, encender el switch permitiría
-  agregar una cuenta por la app y retirar a ella por WhatsApp sin que nadie la
-  verifique. El dueño pidió no tocar el flujo de WhatsApp, así que **el switch
-  no se enciende en ninguna empresa hasta que decida**.
+- **Bot de WhatsApp: no se toca** (decisión del dueño, 04/10/2026). Por
+  WhatsApp solo se carga una cuenta al **registrarse**; un empleado activo no
+  puede agregar ni cambiar cuentas por el bot. Por eso el switch aplica **solo
+  a la app**, y el bot sigue ofreciendo para retirar todas las cuentas del
+  empleado, como hasta ahora.
 
+  **Lo que eso deja abierto, para tenerlo presente al encender el switch:** el
+  bot no mira si la cuenta está verificada. En los 60 días previos salieron 11
+  adelantos de 5 personas por el bot a cuentas sin verificar (las que cargaron
+  al registrarse). Con el switch encendido en una empresa, una cuenta agregada
+  por la app queda sin verificar para la app, pero el bot igual la ofrece. Si
+  eso llega a ser un problema, el cambio es de una consulta en
+  `WhatsAppChatbotController` (se probó el 04/10/2026: de 530 activos con
+  cuentas, 8 no tienen ninguna verificada y solo uno de ellos usa el bot).
 ## 5. Panel admin
 
 - **Empresa** (ficha de la empresa): tarjeta "Cuentas bancarias desde la app"
@@ -103,4 +109,20 @@ la app hubiera quitado el botón en marzo de 2026.
    nada cambia para nadie, y el endpoint de agregar queda cerrado.
 2. Versión de la app.
 3. Forzar actualización.
-4. Encender por empresa o por persona — **después** de resolver §4 (bot).
+4. Encender por empresa o por persona. Tener presente la nota del bot en §4.
+
+## 8. Estado
+
+| Paso | Estado |
+|---|---|
+| SQL, pw-appbackend, pw-adminbackend y pw-adminfrontend | **Desplegado el 04/10/2026**, todo apagado |
+| App (botón y pantalla de agregar) | Pendiente: sale con la próxima versión |
+| Encender en alguna empresa | Pendiente: después de la versión de la app |
+
+Pruebas del 04/10/2026, en vivo y dentro de transacciones deshechas: con todo
+apagado el endpoint rechaza (403); con la empresa encendida la cuenta nueva
+queda sin verificar, el doble toque y el mismo número con espacios se rechazan,
+la cuenta de otra persona se rechaza (409) sin tocar su verificación; *bloquear*
+gana sobre la empresa encendida y *permitir* sobre la apagada; el despedido
+nunca puede. La respuesta del Home solo sumó `bank_accounts.can_add`, y pedir
+un adelanto da lo mismo que antes.
