@@ -219,12 +219,33 @@ Reproduce rama por rama lo que hoy devuelve el Home, incluso lo raro (ver
 
 ### Etapas
 
+El dueño pidió ir directo (03/10/2026), con foto de saldos antes y después de
+cada cambio. Se hizo todo la noche del 03 al 04/10/2026.
+
 | # | Qué | Estado |
 |---|---|---|
-| 1 | `CalculadoraSaldo`, tablas `saldos` y `saldos_historial`, `saldos:recalcular` cada 10 minutos. **Nadie lee la tabla.** | Construida el 03/10/2026 |
-| 2 | Una semana de `saldos:verificar` (cada hora) sin diferencias, más la comparación contra el panel y Enterprise. | Pendiente |
-| 3 | El Home y el bot llaman a `CalculadoraSaldo`; el panel, Enterprise, push y Campañas WhatsApp leen `saldos`. Recálculo al crear o cambiar una solicitud. | Pendiente |
-| 4 | Borrar las copias viejas. | Pendiente |
+| 1 | `CalculadoraSaldo`, tablas `saldos` y `saldos_historial`, `saldos:recalcular` cada 10 minutos y a las 00:01. | Hecho 03/10/2026 |
+| 2 | `saldos:verificar --tabla` cada hora: compara la calculadora y la tabla contra el Home y el bot. | Corriendo |
+| 3a | El Home (`setBalance`) y el bot (`getUserBalance`) dejan de calcular y usan `CalculadoraSaldo`. | Hecho 03/10/2026 |
+| 3b | El panel (`BalanceCalculator::for`) y Enterprise (`getEmployeeBalance`) toman el número de `saldos`. Con ellos, push y Campañas WhatsApp. | Hecho 04/10/2026 |
+| 4 | Borrar el cálculo local del panel y de Enterprise, que hoy queda como respaldo y para las etiquetas. | Pendiente |
+
+**Panel y Enterprise, cómo leen:** buscan la fila de `saldos` de esa persona.
+Si existe, no tiene error y se calculó hace menos de 30 minutos, usan su
+`disponible` y sus `dias_devengados`. Si no, caen al cálculo local de antes.
+Las etiquetas (`payday`, `subtitle_body`, `megalodon`) siguen saliendo del
+cálculo local. **Consecuencia:** un cambio hecho en el panel (salario,
+deducciones, porcentaje) tarda hasta 10 minutos en verse en el saldo del panel.
+En la app y en el bot se ve al instante, porque calculan en vivo.
+
+**Qué cambió para la gente al pasar a la fórmula única:**
+
+- App y bot: nada. La respuesta completa del Home, los límites para pedir y el
+  saldo del bot son idénticos byte por byte para los 958 usuarios.
+- Panel y Enterprise: suben al número de la app dos activos (#999, #4634) y dos
+  inactivos (#1024, #1025) por la clave `Basic`; en Enterprise además #7472
+  (honorarios). Treinta despedidos pasan a mostrar 0, que es lo que ven en la
+  app (cuenta congelada).
 
 **Regla de trabajo del dueño:** antes de cada cambio se guarda una foto de
 los saldos de todos los empleados en todos los canales, y después se compara.
@@ -290,3 +311,32 @@ valor guardado.
 0 diferencias hoy y 0 en cada una de diez fechas simuladas (16/09, 29/09,
 30/09, 01/10, 14/10, 15/10, 16/10, 30/10, 31/10 y 15/11), que cubren días de
 cierre, el día siguiente y quincenas de 15 y de 16 días.
+
+### Despliegue y verificación (noche del 03 al 04/10/2026)
+
+| Paso | Prueba | Resultado |
+|---|---|---|
+| Ensayo previo | Copia del backend en una carpeta temporal con el código nuevo, misma base, contra el backend en vivo. Hoy y cinco fechas simuladas. | 0 diferencias en 958 usuarios |
+| App y bot (23:48) | Foto antes y después: respuesta completa del Home, límites para pedir y saldo del bot. | Idénticos byte por byte, 958 de 958 |
+| Pedir | `createRequestSummary` para 8 empleados con saldo (mínimo, tope y un balboa de más), 3 sin saldo y un despedido, dentro de una transacción deshecha. Antes y después. | Mismo resultado; no quedó ninguna solicitud creada ni salió ningún correo |
+| Cambio de día (00:01) | La tabla se recalcula sola con el día nuevo; `saldos:verificar --tabla`. | 0 diferencias |
+| Panel y Enterprise (00:03) | Foto antes y después de lo que devuelve cada uno. | Solo cambian los casos esperados; todos coinciden con la tabla |
+| Los cuatro canales (00:05) | App, bot, panel y Enterprise para los 651 activos. | Iguales, salvo #7249 (ver abajo) |
+| Tráfico real | Home abierto por empleados y una solicitud real de B/. 45 (#3221, 00:02:51) con el código nuevo. | Sin errores en los tres backends |
+
+**La demora de la tabla, vista en vivo:** #7249 pidió B/. 45 a las 00:02:51. La
+app pasó a mostrarle 0 al instante; el panel siguió mostrando 45 hasta el
+recálculo de las 00:10. Mejora pendiente: recalcular la fila de la persona en
+el momento en que confirma o cancela una solicitud. No se hizo esta noche
+porque ese camino manda correos y no se puede probar sin enviar uno.
+
+**Un caso más que cambió en el panel y Enterprise:** #7260 pasó de 8 a 9. Su
+cuenta da 8,50 exactos y cada copia redondeaba para un lado. Ahora vale el
+redondeo de la app.
+
+**Respaldo:** `/root/respaldo-antes-saldo-unificado-20261003-2258/` en pw-backend
+y pw-staging: código y bases de antes, los archivos reemplazados, y las fotos
+de saldos de antes y de después. **Para volver atrás:** restaurar
+`HomeController.php`, `WhatsAppChatbotController.php` y `routes/console.php`
+en pw-backend, y `BalanceCalculator.php` y `EmployeeService.php` en pw-staging,
+desde ese respaldo. Las tablas `saldos` pueden quedar: sin lectores no afectan.
