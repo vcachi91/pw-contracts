@@ -65,7 +65,12 @@ versión de la app → forzar actualización → recién ahí encender donde hag
 
 ---
 
-## 2. Sucursales por sub-company — Acordado
+## 2. Sucursales por sub-company — Backends y panel publicados (04/10/2026); app en la próxima versión
+
+> **Estado 04/10/2026:** en vivo en pw-appbackend, pw-adminbackend y el panel
+> admin. La app ya lo tiene en el código y sale con la próxima versión. Todo el
+> detalle, las pruebas y cómo volver atrás: `modulos/sucursales.md`. Quedó sin
+> tocar a propósito: bot de WhatsApp, kiosco y panel Enterprise.
 
 Pedido de Pablo (02/10/2026), con el ejemplo de **Davissa Foods → Paul Bakery**.
 
@@ -108,7 +113,13 @@ sub-company), igual que ya se hizo para la empresa en el registro.
 
 ---
 
-## 3. Sucursal obligatoria, con "Sin sucursal" — Acordado
+## 3. Sucursal obligatoria, con "Sin sucursal" — Parcial (04/10/2026)
+
+> **Estado 04/10/2026:** "Sin sucursal" quedó como `sucursal_id` vacío que los
+> paneles muestran con ese texto, **no como una fila** (ver `modulos/sucursales.md`
+> §3): nadie tuvo que migrarse. La app nueva ya exige elegir cuando hay
+> sucursales. **Falta:** exigirla al guardar la ficha en el panel admin (se
+> prende cuando las empresas tengan sus sucursales cargadas) y en el kiosco.
 
 **Reglas acordadas (03/10/2026):**
 
