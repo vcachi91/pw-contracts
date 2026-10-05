@@ -12,6 +12,7 @@ dueño el 03/10/2026 (se lo piden seguido y lo hacía a mano); construido el
 |---|---|
 | 1 | Con **deuda pendiente** el cambio se bloquea y el panel dice qué deuda lo impide. |
 | 2 | Lo pueden hacer **super_admin y admin_ops** (permiso `employees.change_company`). |
+| 3 | (05/10/2026) **El historial ya descontado se mueve con el empleado**: no bloquea. |
 
 ## 2. Qué bloquea el cambio
 
@@ -20,7 +21,6 @@ dueño el 03/10/2026 (se lo piden seguido y lo hacía a mano); construido el
 | `solicitud_en_tramite` | Tiene una solicitud en estado `requested`. Hay que aprobarla o cancelarla. |
 | `adelantos_por_descontar` | Tiene adelantos pagados de la quincena en curso **o de la anterior**. Su empresa actual todavía tiene que descontarlos. Se cuenta desde el inicio de la quincena anterior, con un mínimo de 20 días hacia atrás; sin ciclos cargados, 45 días. |
 | `extraordinario_abierto` | Tiene un adelanto extraordinario que no está rechazado, cancelado ni saldado. |
-| `tiene_historial` | Tiene **cualquier** solicitud pagada, aunque sea vieja. Ver §3. |
 | `misma_empresa` | Ya está en esa empresa. La sub-empresa y la sucursal se cambian desde la ficha. |
 | `falta_sucursal` / `sucursal_invalida` / `sub_empresa_invalida` | El destino no cumple las reglas de `sucursales.md`. |
 | `destino_invalido` / `destino_inactivo` / `destino_sin_enterprise` | La empresa de destino no existe, no está activa o no tiene equipo en el panel Enterprise. |
@@ -29,24 +29,27 @@ dueño el 03/10/2026 (se lo piden seguido y lo hacía a mano); construido el
 Las solicitudes en `ongoing` (borradores sin confirmar) y las canceladas no
 cuentan: no movieron plata.
 
-## 3. Por qué el historial bloquea (por ahora)
+## 3. El historial se va con el empleado
 
 Las solicitudes **no guardan de qué empresa fueron**: `orders` no tiene empresa
-y los reportes la deducen de la empresa **actual** del empleado (17 archivos
-entre el panel admin y Enterprise). Si se mueve a alguien con solicitudes, ese
-historial pasa a verse en la empresa nueva y desaparece de la vieja: la empresa
-vieja pierde sus registros y la nueva ve descuentos que no hizo.
+y los reportes la deducen de la empresa **actual** del empleado. Por eso, al
+mover a alguien con solicitudes viejas ya descontadas, ese historial pasa a
+verse en la empresa nueva y deja de verse en la anterior, en el panel admin y
+en Enterprise.
 
-Hasta que cada solicitud guarde su empresa y los reportes la lean de ahí, quien
-tiene historial no se mueve. Al 05/10/2026: de 938 empleados, 291 quedan
-bloqueados solo por esto y 227 por deuda reciente; se pueden mover los que
-nunca recibieron un adelanto, que incluye a **todos los pendientes de
-aprobación** (193), que es el caso típico de "se registró en la empresa
-equivocada".
+La primera versión (05/10/2026, madrugada) bloqueaba a quien tuviera historial.
+El dueño decidió ese mismo día que **se mueva también**. Lo que queda:
 
-**Fase 2 (pendiente, necesita OK):** agregar `orders.company_id`, llenarlo con
-la empresa actual de cada empleado, grabarlo al crear cada solicitud, y pasar
-los reportes a leerlo. Con eso se quita `tiene_historial`.
+- El panel lo **avisa** antes de confirmar: cuántas solicitudes y por cuánto.
+- El registro del cambio guarda en `antes.ordenes_que_se_mueven` los ids de
+  esas solicitudes y de qué empresa venían. Con eso se puede reconstruir de
+  qué empresa fue cada una si algún día los reportes pasan a leerlo de la
+  solicitud (agregar `orders.company_id`).
+- La **deuda** sigue bloqueando: solicitud en trámite, adelantos de la
+  quincena en curso o de la anterior, y extraordinarios sin cerrar.
+
+Al 05/10/2026, de 938 empleados: 227 bloqueados por deuda reciente y 3 por un
+extraordinario abierto; el resto se puede mover (91 de ellos con historial).
 
 ## 4. Qué mueve
 
@@ -116,6 +119,9 @@ pedido un adelanto en la nueva), o restaurar a mano con esa foto.
 - Los dos endpoints ya desplegados, llamados como los llama el panel: 12
   comprobaciones, entre ellas que con deuda responde 422 y no mueve nada, y que
   sin motivo se rechaza.
+- Con el historial permitido: `revisar` otra vez para los 938 (0 errores) y
+  `mover` a un empleado con 18 solicitudes viejas, deshecho: sus solicitudes
+  no se tocan y el registro guarda las 18 (10 comprobaciones).
 - Ojo al leer el log: los ensayos dejaron dos líneas `[CAMBIO-EMPRESA] empleado
   movido` del usuario #8230 a las ~23:00 del 04/10. No son reales: la
   transacción se deshizo. La verdad está en `employee_company_changes`.

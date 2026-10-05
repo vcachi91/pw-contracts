@@ -373,12 +373,11 @@ $0.016.
 
 ---
 
-## 5. Cambiar de empresa a un empleado desde el panel — Publicado (05/10/2026), solo sin historial
+## 5. Cambiar de empresa a un empleado desde el panel — Publicado (05/10/2026)
 
-> **Estado 05/10/2026:** en vivo en el panel admin. Mueve a quien no tiene
-> deuda **ni solicitudes pagadas**: quien tiene historial queda bloqueado hasta
-> la fase 2 (que cada solicitud guarde su empresa). Detalle, pruebas y cómo
-> deshacer: `modulos/cambio-de-empresa.md`.
+> **Estado 05/10/2026:** en vivo en el panel admin. La deuda bloquea; el
+> historial ya descontado se va con el empleado (decisión del dueño del mismo
+> día). Detalle, pruebas y cómo deshacer: `modulos/cambio-de-empresa.md`.
 
 Pedido del dueño (03/10/2026): se lo piden seguido y hoy lo hace a mano.
 
