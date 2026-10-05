@@ -133,6 +133,13 @@ sigue pasando hasta que actualicen; lo que elijan de más se descarta.
 ## 7. Qué NO cambió (a propósito)
 
 - **Panel Enterprise:** el alcance de usuarios por sucursal funciona igual.
+  Desde el 05/10/2026 `GET /sucursales` y las `sucursales` de cada usuario
+  (`/auth/me`, listado de usuarios) traen además `sub_company_name` (`null` si
+  la sucursal cuelga directo de la empresa), y el panel la muestra junto al
+  nombre: "Casa Matriz · Deco Auto". Es solo presentación: ids, nombres y
+  alcance no cambiaron (foto de los 34 usuarios idéntica antes y después).
+  La bandeja de adelantos extraordinarios ya tenía su propia columna de
+  sub-empresa; sus filas no se tocaron.
 
 ## 7b. Obligatoria en el panel y "Sin sucursal" en reportes (04/10/2026)
 
