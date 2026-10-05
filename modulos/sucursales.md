@@ -120,9 +120,21 @@ sigue pasando hasta que actualicen; lo que elijan de más se descarta.
 - **Bot de WhatsApp:** no se tocó. Quien se registra por ahí queda con la
   sucursal que el bot ya manejaba, o sin sucursal.
 - **Panel Enterprise:** el alcance de usuarios por sucursal funciona igual.
-- **Obligatoria en el panel admin:** todavía no se exige al guardar la ficha.
-  Se prende al final, cuando las empresas tengan sus sucursales cargadas, para
-  no frenar a operaciones al editar a los 581 empleados sin sucursal.
+
+## 7b. Obligatoria en el panel y "Sin sucursal" en reportes (04/10/2026)
+
+- **Ficha y alta de empleado:** si su empresa / sub-empresa tiene sucursales
+  para elegir, no se puede guardar sin una (el panel avisa y el backend
+  responde 422). Si no tiene, queda "Sin sucursal" y no se pide nada.
+- Al activarse había 73 empleados sin sucursal en empresas que sí tienen
+  (Minimed 41, Cinépolis 24, J. Cain 4, Manpower 4): la próxima vez que se
+  guarde su ficha habrá que elegirles una. Los otros 493 sin sucursal están en
+  empresas o sub-empresas sin sucursales y no se les pide.
+- Es también donde se cubre al que entra por WhatsApp: el bot no pregunta
+  sucursal, pero operaciones no puede aprobarlo desde la ficha sin elegirla.
+- **Reportes:** el CSV de empleados y el de transacciones dicen "Sin sucursal"
+  en vez de dejar el espacio vacío, y el tablero suma "Sin sucursal: N" para
+  que el desglose cuadre con el total.
 
 ## 8. Pruebas (04/10/2026)
 
