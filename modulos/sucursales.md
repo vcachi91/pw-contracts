@@ -74,6 +74,36 @@ La regla vive en un solo lugar: `App\Support\Sucursales`.
   a una sub-empresa) puede seguir editándose; la ficha le muestra su sucursal
   con "(no es de su sub-empresa)".
 
+- **Página Sub-companies:** columna "Sucursales" y botón **Sucursales** en cada
+  fila, que abre la lista de esa sub-empresa para agregar, renombrar o quitar.
+  `PUT /admin/sub-company/{id}/sucursales` con `{ sucursales: [{ id?, name }] }`
+  (permiso `sucursales.manage`). Solo toca las de esa sub-empresa: las de la
+  empresa madre y las de otras sub-empresas no se modifican. Quitar una deja a
+  sus empleados sin sucursal.
+
+## 5b. Kiosco del captador
+
+- `GET /admin/pre-registrations/companies` trae `sub_companies` (id y nombre)
+  en cada empresa.
+- Si la empresa tiene sub-empresas, **hay que elegir una** para comenzar, igual
+  que en la app. Las sucursales que se ofrecen son solo las de esa sub-empresa.
+- Si hay sucursales para elegir, **hay que elegir una**. Sin ellas no se pide.
+- `GET /admin/pre-registrations/sucursales?company_id=&sub_company_id=`: con la
+  clave `sub_company_id` presente (aunque vacía) aplica la regla; sin la clave
+  devuelve todas las de la empresa, que es lo que pide un kiosco viejo que
+  quedó abierto en la tablet.
+- `pre_registrations.sub_company_id` (nullable) guarda la sub-empresa. Si el
+  kiosco no la manda, se toma la de la sucursal elegida. Se rechaza con 422 si
+  la sub-empresa no es de la empresa (`invalid_sub_company`) o la sucursal no
+  es de esa sub-empresa (`invalid_sucursal`).
+- **Al completar el registro**, por la app o desde el panel, el empleado nace
+  en la sub-empresa del pre-registro. En la app (`completeRegistration`), si no
+  llega una sucursal válida se usa la que eligió el captador: las apps hasta la
+  1.3.16 la perdían y el empleado quedaba sin sucursal.
+- `GET pre-registration/lookup` (pw-appbackend) devuelve `sub_company_id`, que
+  la app nueva usa para pedir las sucursales de esa sub-empresa.
+- El texto del consentimiento no cambió: sigue nombrando empresa y sucursal.
+
 ## 6. App (pw-mobileapp) — sale con la próxima versión
 
 - Pide la lista con `type`.
@@ -89,10 +119,6 @@ sigue pasando hasta que actualicen; lo que elijan de más se descarta.
 
 - **Bot de WhatsApp:** no se tocó. Quien se registra por ahí queda con la
   sucursal que el bot ya manejaba, o sin sucursal.
-- **Kiosco del captador:** sigue eligiendo empresa y sucursal como antes, y
-  lista todas las sucursales de la empresa. Si se elige una que es de una
-  sub-empresa, al completar el registro en la app se descarta (el pre-registro
-  no guarda sub-empresa). Pendiente: que el kiosco elija también la sub-empresa.
 - **Panel Enterprise:** el alcance de usuarios por sucursal funciona igual.
 - **Obligatoria en el panel admin:** todavía no se exige al guardar la ficha.
   Se prende al final, cuando las empresas tengan sus sucursales cargadas, para
@@ -109,6 +135,11 @@ sigue pasando hasta que actualicen; lo que elijan de más se descarta.
   YEM Corp / Cinépolis.
 - La regla nueva acepta a los 390 empleados que hoy tienen sucursal y a los 130
   pre-registros del kiosco con sucursal: nadie pierde la suya.
+- Guardado desde "Editar empresa" (13 comprobaciones) y kiosco más página de
+  Sub-companies (31 comprobaciones), sobre el código desplegado y dentro de
+  transacciones que se deshicieron. Incluye el kiosco viejo sin el dato nuevo.
+- Primer registro real por el código nuevo: usuario #8261 (J. Cain Logistics),
+  20:34, completado con su sucursal.
 
 ## 9. Volver atrás
 

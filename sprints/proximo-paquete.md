@@ -70,7 +70,8 @@ versión de la app → forzar actualización → recién ahí encender donde hag
 > **Estado 04/10/2026:** en vivo en pw-appbackend, pw-adminbackend y el panel
 > admin. La app ya lo tiene en el código y sale con la próxima versión. Todo el
 > detalle, las pruebas y cómo volver atrás: `modulos/sucursales.md`. Quedó sin
-> tocar a propósito: bot de WhatsApp, kiosco y panel Enterprise.
+> tocar a propósito: bot de WhatsApp y panel Enterprise. El kiosco y la página
+> de Sub-companies también quedaron publicados el 04/10.
 
 Pedido de Pablo (02/10/2026), con el ejemplo de **Davissa Foods → Paul Bakery**.
 
@@ -119,7 +120,8 @@ sub-company), igual que ya se hizo para la empresa en el registro.
 > paneles muestran con ese texto, **no como una fila** (ver `modulos/sucursales.md`
 > §3): nadie tuvo que migrarse. La app nueva ya exige elegir cuando hay
 > sucursales. **Falta:** exigirla al guardar la ficha en el panel admin (se
-> prende cuando las empresas tengan sus sucursales cargadas) y en el kiosco.
+> prende cuando las empresas tengan sus sucursales cargadas). El kiosco ya la
+> exige cuando hay sucursales para elegir.
 
 **Reglas acordadas (03/10/2026):**
 
