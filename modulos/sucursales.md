@@ -104,6 +104,21 @@ La regla vive en un solo lugar: `App\Support\Sucursales`.
   la app nueva usa para pedir las sucursales de esa sub-empresa.
 - El texto del consentimiento no cambió: sigue nombrando empresa y sucursal.
 
+## 5c. Bot de WhatsApp (04/10/2026, pedido expreso del dueño)
+
+- Paso nuevo `WAITING_SUCURSAL`, justo después de confirmar la empresa y antes
+  de los términos. Solo existe si la empresa o sub-empresa **tiene** sucursales:
+  el bot manda la lista numerada y la persona responde con el número (también
+  acepta el nombre). Es texto libre, no necesita plantilla.
+- Sin sucursales el paso no aparece y el registro sigue igual que antes.
+- Usa la misma regla que la app (`App\Support\Sucursales`), con el tipo de la
+  empresa que el bot ya guardaba: una sub-empresa ve solo las suyas.
+- La sucursal viaja en la sesión y se manda como `sucursal_id` al mismo
+  service del registro, que la valida igual que la de la app.
+- Si la lista no se puede cargar, el registro sigue sin sucursal.
+- Tres respuestas inválidas mandan al agente, como en los demás pasos.
+- Fue lo único que se tocó del bot.
+
 ## 6. App (pw-mobileapp) — sale con la próxima versión
 
 - Pide la lista con `type`.
@@ -117,8 +132,6 @@ sigue pasando hasta que actualicen; lo que elijan de más se descarta.
 
 ## 7. Qué NO cambió (a propósito)
 
-- **Bot de WhatsApp:** no se tocó. Quien se registra por ahí queda con la
-  sucursal que el bot ya manejaba, o sin sucursal.
 - **Panel Enterprise:** el alcance de usuarios por sucursal funciona igual.
 
 ## 7b. Obligatoria en el panel y "Sin sucursal" en reportes (04/10/2026)
@@ -130,8 +143,8 @@ sigue pasando hasta que actualicen; lo que elijan de más se descarta.
   (Minimed 41, Cinépolis 24, J. Cain 4, Manpower 4): la próxima vez que se
   guarde su ficha habrá que elegirles una. Los otros 493 sin sucursal están en
   empresas o sub-empresas sin sucursales y no se les pide.
-- Es también donde se cubre al que entra por WhatsApp: el bot no pregunta
-  sucursal, pero operaciones no puede aprobarlo desde la ficha sin elegirla.
+- Cubre también al que entró por WhatsApp antes de que el bot preguntara la
+  sucursal: operaciones no puede aprobarlo desde la ficha sin elegirla.
 - **Reportes:** el CSV de empleados y el de transacciones dicen "Sin sucursal"
   en vez de dejar el espacio vacío, y el tablero suma "Sin sucursal: N" para
   que el desglose cuadre con el total.
