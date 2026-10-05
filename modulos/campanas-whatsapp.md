@@ -174,3 +174,22 @@ permiso lo tiene solo `super_admin`.
 | POST | `/plantillas/sincronizar` | Trae de Twilio el estado actual. |
 | POST | `/plantillas` | Crea una plantilla en Twilio y la manda a aprobación. |
 | PUT | `/plantillas/{id}` | Guarda el mapeo por defecto de variables. |
+
+## Cambios del 05/10/2026 (dueño)
+
+- El módulo volvió al menú, como **WhatsApp** (dentro de Marketing).
+- La lista de plantillas muestra **solo las creadas para campañas**
+  (`creada_desde_panel = 1`). Las del bot y las de avisos siguen en Twilio y se
+  siguen sincronizando, pero no se ven acá: no sirven para marketing. No se
+  borraron de Twilio porque el bot y los avisos las usan.
+- Tres plantillas nuevas, pedidas como **UTILITY** y sin botón de baja, sacadas
+  de los push que manda Pablo (se dejaron fuera los de "congelado"):
+
+| Nombre | Texto | Variables |
+|---|---|---|
+| `payway_disponible_v1` | Hola {{1}}, Payway está nuevamente disponible. / Tienes ${{2}} para acceder de inmediato. | nombre, saldo |
+| `payway_saldo_disponible_v1` | Hola {{1}}, tienes ${{2}} disponibles en Payway. / Puedes acceder a tu salario en cualquier momento de tu quincena. | nombre, saldo |
+| `payway_cierre_de_ciclo_v1` | Hola {{1}}, tu ciclo de Payway de esta quincena cierra el {{2}}. / Tienes ${{3}} disponibles hasta esa fecha. | nombre, próximo cierre, saldo |
+
+  Meta decide la categoría final: puede aprobarlas como MARKETING aunque se
+  pidan como UTILITY (cuesta casi 5 veces más por mensaje).
