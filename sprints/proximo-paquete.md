@@ -82,7 +82,8 @@ pertenecer a una sub-company.
 - Quien pertenece a una sub-company que tiene sucursales propias ve **solo las
   de esa sub-company** (Pablo: "solo de la subempresa").
 - Quien pertenece a una sub-company **sin** sucursales propias, o a una empresa
-  sin sucursales, ve **"Sin sucursal"** (ver §3).
+  sin sucursales, **no ve el campo**: el backend le asigna "Sin sucursal" por
+  dentro (decisión del dueño, 04/10/2026; ver §3).
 
 **Afecta a todos los lugares donde se elige o se muestra una sucursal:** registro
 en la app, kiosco del captador, registro por WhatsApp, alta y edición de
@@ -118,6 +119,10 @@ sub-company), igual que ya se hizo para la empresa en el registro.
   registro.
 - **Si un registro llega sin sucursal** (una app vieja, o un canal todavía sin
   actualizar), el backend le asigna "Sin sucursal" en vez de rechazarlo.
+- **"Sin sucursal" nunca se le muestra al empleado** (dueño, 04/10/2026): si no
+  hay sucursales reales para elegir, el campo no aparece y la asignación es
+  interna. Obligatorio quiere decir que el campo se exige **cuando hay**
+  sucursales reales. Sí se ve en los paneles, para reportes y reasignar.
 - **Cuando una empresa reciba sus sucursales reales**, "Sin sucursal" deja de
   aparecer para registros nuevos. Quien ya esté en ella la conserva hasta que
   operaciones lo reasigne.
