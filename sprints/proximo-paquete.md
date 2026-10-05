@@ -373,7 +373,12 @@ $0.016.
 
 ---
 
-## 5. Cambiar de empresa a un empleado desde el panel — Acordado
+## 5. Cambiar de empresa a un empleado desde el panel — Publicado (05/10/2026), solo sin historial
+
+> **Estado 05/10/2026:** en vivo en el panel admin. Mueve a quien no tiene
+> deuda **ni solicitudes pagadas**: quien tiene historial queda bloqueado hasta
+> la fase 2 (que cada solicitud guarde su empresa). Detalle, pruebas y cómo
+> deshacer: `modulos/cambio-de-empresa.md`.
 
 Pedido del dueño (03/10/2026): se lo piden seguido y hoy lo hace a mano.
 
@@ -535,6 +540,12 @@ copias. Es solo backend: no necesita versión de la app.
   de códigos OTP.
 
 ---
+
+## Pendientes de la app anotados por el dueño
+
+- **Botón de iniciar sesión (05/10/2026):** al tocarlo debe decir "Iniciando
+  sesión…" y quedar deshabilitado hasta que responda el servidor, para que no
+  se toque dos veces. Va con la próxima versión de la app.
 
 ## Por revisar antes de construir
 
