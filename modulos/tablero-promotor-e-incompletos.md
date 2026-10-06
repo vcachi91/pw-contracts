@@ -15,7 +15,7 @@ ajustado el 05/10/2026 con tres pedidos suyos (notas de voz al dueño).
 |---|---|---|
 | 1 | Solo el número de teléfono | Números importados que aún no son usuarios + usuarios que dejaron su número y nunca su nombre. |
 | 2 | **Sin código de empleado** | Pre-registros del kiosco que siguen abiertos (todavía no son empleados) + usuarios **en proceso**, con nombre, sin `user_details.employee_code`. |
-| 3 | Pendiente firma o cuenta bancaria | Usuarios con nombre a los que les falta la firma o una cuenta activa. Incluye a los activos sin cuenta. |
+| 3 | **Sin firma** | Usuarios **en proceso**, con nombre y con código, que todavía no firmaron. |
 
 - **El código** es el campo "Employee Code" de la ficha del empleado. Solo lo
   carga operaciones (ficha o carga masiva); ni la app, ni WhatsApp, ni el
@@ -32,8 +32,14 @@ ajustado el 05/10/2026 con tres pedidos suyos (notas de voz al dueño).
 - Hay empleados con el vínculo o la ficha repetidos en la base: la bandeja
   cuenta y muestra a cada persona una vez (`distinct` + `unique('key')`).
 
-Al cambiar (05/10/2026): 1 = 30, 2 = 146 (8 pre-registros + 138 usuarios; a 9
-solo les falta el código), 3 = 179. Antes: 30 / 8 / 320.
+- **La 3 es solo la firma** (pedido de David; el dueño lo confirmó el 05/10/2026
+  por la noche). Hasta ese día incluía también a quien solo le faltaba la
+  cuenta bancaria, y a los **activos sin cuenta**. Esos ya no están en la
+  bandeja: al cambiar salieron 160 personas (159 activos sin cuenta bancaria y
+  1 en proceso que ya había firmado). Si hace falta seguirlos, es otra lista.
+
+Al cambiar (05/10/2026): 1 = 30, 2 = 147, 3 = 19. Con la 3 como "firma o
+cuenta" eran 30 / 147 / 179; antes de todo, 30 / 8 / 320.
 
 ## 2. El tablero
 
