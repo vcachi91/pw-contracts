@@ -88,8 +88,8 @@ pw-frontend.
   registro muestra que ya estaba activo antes (un cambio desde `active` previo
   a esa activación), es una reactivación y se usa la fecha de vínculo con la
   empresa. Para quien no tiene rastro, también la fecha de vínculo. Al cambiar:
-  total 952 activos, "este mes" 442 (443 altas nuevas menos 1 de prueba; 2
-  reactivaciones de empleados viejos quedaron fuera). Comprobado contra un
+  total 952 activos y "este mes" 442 (2 reactivaciones de empleados viejos
+  quedaron fuera). Comprobado contra un
   conteo independiente.
 - **Empresas de prueba fuera de todo el panel del promotor:** BigBet (1),
   Bonanza 94 S.A (2), Desarrollo Bahia (3) e Interna (test audit) (74), en
