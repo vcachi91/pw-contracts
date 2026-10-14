@@ -77,3 +77,28 @@ vista en un teléfono**.
 
 Respaldo: `/root/respaldo-antes-tablero-categorias-20261005/` en pw-staging y
 pw-frontend.
+
+## 5. Cambios del 14/10/2026 (pedido del dueño)
+
+- **Solo empleados activos.** "Registrados" y los cortes cuentan solo a quien
+  está `active` hoy (antes contaba a todos los vinculados a la empresa).
+- **Un registro cuenta cuando la cuenta pasa a activa**, no cuando entra al
+  sistema. La fecha sale de `activity_log` (auditoría del panel, desde el
+  26/06/2026): la **primera** vez que el `status` quedó en `active`. Si el
+  registro muestra que ya estaba activo antes (un cambio desde `active` previo
+  a esa activación), es una reactivación y se usa la fecha de vínculo con la
+  empresa. Para quien no tiene rastro, también la fecha de vínculo. Al cambiar:
+  total 952 activos, "este mes" 442 (443 altas nuevas menos 1 de prueba; 2
+  reactivaciones de empleados viejos quedaron fuera). Comprobado contra un
+  conteo independiente.
+- **Empresas de prueba fuera de todo el panel del promotor:** BigBet (1),
+  Bonanza 94 S.A (2), Desarrollo Bahia (3) e Interna (test audit) (74), en
+  `PromoterDashboardController::EMPRESAS_DE_PRUEBA` (por id). La bandeja las
+  saca con `?sin_prueba=1`, que solo manda el tablero: en `/pre-registro`
+  (operaciones) siguen apareciendo.
+- **Empleados: columna "Promotor" en lugar de "Régimen".** Nombre del admin
+  que lo captó en el kiosco (`pre_registrations.captured_by_admin_id` del
+  pre-registro vinculado por `user_id`; si hay varios, el último). Vacío si no
+  vino por promotor. El CSV conserva Régimen.
+
+Respaldo: `/root/respaldo-antes-promotores-20261014/` en pw-staging y pw-frontend.
