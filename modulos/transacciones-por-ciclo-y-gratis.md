@@ -109,8 +109,11 @@ mensajes que `/auth/login`, en el mismo orden. Responde siempre 200 con
 | `registro_incompleto` / `en_aprobacion` | El mensaje, como hoy. |
 | otro / sin respuesta | Pasa al paso 2 (login de siempre). |
 
-Quien tiene la contraseña 123456 (creados por WhatsApp o el panel) **no** se
-obliga a cambiarla: decisión del dueño.
+**Contraseña automática 123456** (creados por WhatsApp o el panel): desde el
+15/10/2026 el paso 1 la trata como `sin_contrasena` y los manda a crear la
+suya con el código (el dueño cambió la decisión del 14/10). Al cambiarla no se
+puede elegir 123456 de nuevo. Eran 54 cuentas activas. Si un número tiene
+varias cuentas, el login toma la activa (antes tomaba cualquiera).
 
 ## 6. Pruebas (14/10/2026)
 
