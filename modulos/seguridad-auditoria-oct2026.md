@@ -24,6 +24,11 @@ Este archivo es el estado, no el informe. El informe vivo está en
 | 32 rutas de escritura con permiso de solo lectura | `pw-adminbackend` | `d1a34ec` |
 | Desactivado volvía a entrar, y el scopeado se ampliaba solo | `pw-hrbackend` | `a4c9e5f` |
 | Cabeceras fijas de `/v1/admin/*` | `pw-hrbackend` | `ffb29d2` |
+| El `com_admin` nacía con `123456` y la clave iba por correo | `pw-adminbackend` | `109e444` |
+| Registro público de `admin_users` | `pw-adminbackend` | `c649b30` |
+| La gratis del mes no se revisaba al confirmar | `pw-appbackend` | `e31f951` |
+| Los tokens del panel Enterprise no vencían nunca | `pw-hrbackend` | `0167fc7` |
+| El token del link de firma era el teléfono en base64 | `pw-appbackend`, `pw-adminbackend` | `e387db2`, `12bcc4a` |
 
 Respaldos de cada pieza en `/root/backup-seguridad-*` de su servidor.
 
@@ -77,45 +82,29 @@ permiso; se le agregaron `companies.create` y `companies.update`, que sí usa.
 
 ## Lo que falta
 
-### Necesita decisión del dueño
+### Solo lo puede hacer el dueño
 
-- **Rotar el token de Twilio.** No hay forma de saber si ya se filtró. Agendado
-  de madrugada, que es cuando el corte de unos minutos no se nota.
+- **Rotar el token de Twilio.** No hay forma de saber si ya se filtró. El
+  arreglo del webhook cierra la fuga hacia adelante, pero no lo que ya pasó.
+  Deja el WhatsApp mudo unos minutos, así que va de madrugada.
 - **Anular la clave de DeepSeek** en su consola. Viaja dentro de todas las
   versiones publicadas de la app hasta la 1.3.17.
-- **El `com_admin` de cada empresa nueva nace con `123456`** y la clave va por
-  correo en texto plano (`welcome.blade.php` y `new-employee-created.blade.php`
-  de `pw-adminbackend`). Arreglarlo cambia lo que recibe la empresa cliente al
-  darse de alta, así que el texto nuevo se acuerda antes.
-- **La página pública `/auth/register` del panel Admin.** Crea una fila en
-  `admin_users` sin ninguna autenticación. Queda acotado porque nace inactiva y
-  sin rol, y el login rechaza inactivos — ninguna cuenta se creó nunca por ahí.
-  Lo que sí permite es apartar correos y teléfonos, que tienen índice único.
 
-### Necesita diseño, no es un parche
+### Decidido no hacer, con motivo
 
-- **El token del link de firma sigue siendo el teléfono en base64**, o sea
-  adivinable. Lo que se cerró el 15/10 evita el daño real (no se puede pisar una
-  firma existente, la imagen se valida, se quitó la ruta duplicada), pero el
-  token sigue siendo forjable para alguien que todavía no firmó.
+- **La página `/auth/register` del panel Admin.** El endpoint ya se quitó
+  (`c649b30`), y el enlace del login ya estaba oculto con `display: none`, así
+  que nadie llega por la interfaz y la página apunta a una ruta que da 404.
+  Recompilar el panel solo para borrar archivos muertos es riesgo sin beneficio.
+  Los archivos quedan: `app/auth/register/page.tsx`,
+  `components/auth/register-form.tsx`, `components/auth/actions/register.ts`.
 
-  Hacerlo bien pide una **tabla de tokens de un solo uso**: el link se genera en
-  DOS repos —`pw-appbackend` (el bot) y `pw-adminbackend` (el panel)— que no
-  comparten código ni `APP_KEY`, así que un HMAC obligaría a un secreto
-  compartido en dos `.env`. Una tabla encaja con cómo se comunican estos
-  backends y da vencimiento y un solo uso de verdad. Es cambio de esquema que
-  toca dos backends: se acuerda acá antes de escribirlo.
+### Menores que quedan
 
-### Menores
-
-- Las transacciones gratis del mes se revisan al **armar el resumen** pero no al
-  confirmar (`Gratuidad::decidir` solo se llama en `createRequestSummary`), así
-  que armando varios resúmenes antes de confirmar se usan de más. Hoy no afecta
-  a nadie: nadie tiene gratis asignadas.
-- Los 125 activos **conservan el hash de `123456`** guardado. Ya no sirve para
-  entrar; conviene ponerlo en `NULL` cuando se les avise.
-- `config/sanctum.php` de `pw-hrbackend` tiene `expiration => null`: los tokens
-  del panel Enterprise no vencen nunca. Ponerle vencimiento cierra la sesión de
-  quien tenga una vieja, así que va coordinado.
+- Los tokens de firma gastados y vencidos se acumulan en `signature_tokens`.
+  Conviene un `prune` cuando la tabla crezca.
 - Siguen las 5 órdenes con filas `requested` duplicadas de antes del candado del
   22/09, y el backfill de cédulas fallando por cuota de Gemini.
+- `admin_view` y `admin_finance` están definidos con 10 y 14 permisos y **nadie
+  los tiene**. Si algún día se los asignan a alguien, conviene revisar primero
+  que no hereden nada que no deba.
