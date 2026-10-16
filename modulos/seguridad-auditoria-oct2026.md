@@ -32,6 +32,41 @@ Este archivo es el estado, no el informe. El informe vivo está en
 
 Respaldos de cada pieza en `/root/backup-seguridad-*` de su servidor.
 
+## Lo cerrado en la segunda ronda (15/10/2026, noche): los 67 que faltaban
+
+La primera ronda cubrió los 16 graves. En la segunda se cerraron **todos los
+demás** menos lo que solo puede hacer el dueño (abajo). Un commit por repo.
+
+| Repo | Commit | Qué se cerró |
+|---|---|---|
+| `pw-appbackend` | `ba11b33`, `de0e9e7` | throttle en login/OTP; `register` no pisa claves; `complete-registration` ignora el teléfono del cliente y busca la cuenta bancaria solo entre las propias; fotos solo JPEG/PNG con nombre aleatorio; perfil editable solo `address` (salario, ingreso y cédula son de RH); candado por usuario al confirmar; la nota no puede valer `nuevo`; firma con nombre aleatorio, PNG real, `nosniff` y throttle; reembolso de referido atado a la orden; aviso a RH por slug; `.env.old` fuera del repo |
+| `pw-adminbackend` | `38d5239` | login con 401 uniforme y límite 10/min por IP, 5 por cuenta; el middleware `admin` exige `AdminUser` (un token de la app pasaba); `change-password` con política y cierre de otras sesiones; CSV con celdas protegidas (`App\Support\Csv`); snapshots de borrado sin `password`/`fcm_token` (los 11 viejos limpiados en la base); cabeceras fuera del log; promotor solo ve sus pre-inscripciones; fotos del kiosko solo JPEG/PNG/WebP; `view-cedula`/`view-payslips` con tipo fijo, `nosniff`, nombre acotado y throttle; `storage/credentials.json` fuera del repo |
+| `pw-hrbackend` | `c2a2e54` | cuentas bancarias, bandeja de adelantos y cambio de estado acotados con `AudienceResolver` (slug + sub-empresa/sucursal); `update()`/activar/desactivar/borrar respetan el alcance; `sub_company_id` validado; vacaciones con `isMyEmployee`; carga masiva resuelve la empresa de la app por slug; `forget-password` responde igual exista o no el correo y a 5/min; `reset-password` y `resend-otp` eliminados (y `password_resets` vaciada); cambio de clave cierra sesiones; `.env.example` sin secretos; webhook de Slack sin valor por defecto |
+| `pw-adminfrontend` | `12aac25` | todo `[id]`/`[action]`/`[type]`/`[clave]`/`[token]` de `/api` validado antes de armar la URL del backend (`lib/ids.ts`); CSV de empleados, transacciones y adelantos con celdas protegidas; proxy de login con 401 genérico; CSV de transacciones sin volcar al log y con id validado; `?prereg=` validado; **salir del kiosco pide la contraseña del operador** |
+| `pw-hrfrontend` | `5f182b2` | ídem para sus rutas `/api` y `ENTERPRISE_ENDPOINTS` con segmentos codificados; CSV protegido; recuperar contraseña con el mismo mensaje exista o no el correo |
+
+Además, fuera de la lista de la auditoría: los tres `.env` de producción
+tenían `APP_DEBUG=true` y devolvían la traza completa en cada error (se vio al
+probar). Quedó en `false` en los tres, con respaldo del `.env` en `/root`.
+
+### Lo que cambia para quien opera
+
+- **Kiosco.** "Salir" (o "Mis captaciones") ahora pide la contraseña del panel
+  del operador. Antes un empleado ajeno podía tocar Salir y quedar dentro del
+  panel con la sesión del promotor. Si molesta demasiado, la salida de fondo es
+  el rol propio del kiosco (§6 de `pre-registro.md`); mientras, esto.
+- **Panel Admin, login.** Ya no distingue "el correo no existe" de "clave
+  incorrecta". Seis intentos fallidos seguidos sobre la misma cuenta dan 429
+  durante un minuto.
+- **Panel Enterprise.** Quien tenga alcance de sub-empresa o sucursal ya no ve
+  cuentas bancarias ni adelantos de empleados fuera de su alcance (antes veía
+  los de otra empresa por una confusión de ids). `Payway SA` (hr 53) no tiene
+  espejo en la app, así que sus 0 usuarios verían listas vacías.
+- **Perfil en la app.** `update-profile` solo guarda la dirección. Si la app
+  manda salario o fecha de ingreso, se ignoran sin error.
+- **Correo de alta (Enterprise).** Ya no dice "contraseña temporal 123456";
+  dice que la app pedirá crear la clave la primera vez.
+
 ### El webhook, que era el crítico
 
 `POST /api/v1/whatsapp/webhook` es público porque lo llama Twilio, pero no
@@ -84,11 +119,31 @@ permiso; se le agregaron `companies.create` y `companies.update`, que sí usa.
 
 ### Solo lo puede hacer el dueño
 
+Secretos que estuvieron escritos en los repos. El código ya no los usa o ya no
+los trae, pero siguen en el **historial de git** y hay que darlos por vistos:
+
 - **Rotar el token de Twilio.** No hay forma de saber si ya se filtró. El
   arreglo del webhook cierra la fuga hacia adelante, pero no lo que ya pasó.
-  Deja el WhatsApp mudo unos minutos, así que va de madrugada.
+  Deja el WhatsApp mudo unos minutos, así que va de madrugada. También estaba
+  en `pw-appbackend/.env.old`.
+- **Cambiar la clave del buzón `hello@…`** (estaba en `.env.old` de la app y
+  en `.env.example` del Enterprise; la de producción es otra, pero la vieja
+  sigue siendo de la misma cuenta si no se cambió).
+- **Rotar las claves de almacenamiento de objetos** (`AWS_ACCESS_KEY_ID` /
+  `AWS_SECRET_ACCESS_KEY`): las del `.env.example` del Enterprise son **las
+  mismas que están vivas** en los `.env` de los dos paneles. Solo las usa
+  `ImageUploadJob`, que no parece correr.
+- **Anular el webhook de Slack** que venía fijo en `config/backend.php` del
+  Enterprise (y es el mismo del `.env` en vivo). Nada lo lee hoy.
+- **Revocar la cuenta de servicio de Google** de `storage/credentials.json`
+  (proyecto `mitro-sheet`, ajeno a Payway; nada la referenciaba). Quedó en
+  `/root/backup-seguridad-gcpkey/` del servidor del panel.
 - **Anular la clave de DeepSeek** en su consola. Viaja dentro de todas las
   versiones publicadas de la app hasta la 1.3.17.
+- **Decidir si se reescribe el historial** (`git filter-repo`) de
+  `pw-appbackend` (`.env.old`), `pw-adminbackend` (`credentials.json`) y
+  `pw-hrbackend` (`.env.example`). Rompe los clones de todo el que tenga el
+  repo; si se rotan las claves de arriba, el historial deja de importar.
 
 ### Decidido no hacer, con motivo
 
