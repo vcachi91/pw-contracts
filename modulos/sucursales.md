@@ -179,3 +179,39 @@ Respaldo en `/root/respaldo-antes-sucursales-20261004/` (los tres servidores):
 los archivos anteriores y un volcado de `sucursales` y `sub_companies`. La
 columna `sub_company_id` puede quedarse aunque se vuelva al código anterior: el
 código viejo la ignora (verificado).
+
+## 9. Razón social por sucursal (16/10/2026)
+
+Pedido del dueño. Cada sucursal puede tener su **razón social** (opcional):
+`sucursales.legal_name`. Se carga en la ficha de la empresa (editor de
+sucursales) y en "Sucursales" de cada sub-empresa.
+
+**Qué razón social sale en los documentos de una transacción**
+(`CompanyDisplayName::forUser`, pw-appbackend):
+
+1. la de la **sucursal** del empleado, si tiene;
+2. la de su **sub-empresa**;
+3. la de la **empresa**;
+4. el nombre de la empresa.
+
+Sin razón social en la sucursal, todo sigue como antes (comprobado para los
+990 activos: idéntico antes y después).
+
+**Se guarda la que se firmó.** Cada transacción guarda la razón social al
+crearse (`orders.company_legal_name`, en `Order::booted()` → `creating`; vale
+para la app y para WhatsApp sin tocar el bot). El resumen que firma el
+empleado, el correo y el PDF del panel usan esa. Si después le cargan o le
+cambian la razón social a la sucursal, las transacciones ya firmadas no
+cambian. Las anteriores al 16/10/2026 no la tienen: el PDF sigue con la regla
+de siempre (sub-empresa → empresa → nombre), sin la sucursal, para no alterar
+documentos ya firmados.
+
+**No exige versión nueva de la app:** la app recibe el nombre armado del
+servidor.
+
+**Fuera de alcance (decisión del dueño):** adelantos extraordinarios (siguen
+con la razón social de la empresa) y el consentimiento del registro (usa el
+nombre comercial elegido en la lista).
+
+Respaldo: `/root/respaldo-antes-razon-social-sucursal-20261016/` en los tres
+servidores (incluye volcado de `sucursales`).
