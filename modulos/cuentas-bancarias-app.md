@@ -17,6 +17,7 @@ pw-adminfrontend (los dos switches), pw-mobileapp (el botón).
 | 5 | Una cuenta agregada desde la app nace **sin verificar**. No aparece para retirar hasta que operaciones la verifica en el panel. |
 | 6 | Si la cuenta **ya es de otra persona**, se rechaza con un mensaje de contáctenos. Dos usuarios no comparten cuenta. |
 | 7 | Un despedido no agrega cuentas, diga lo que diga el switch. |
+| 8 | `accounts.account_number` se guarda **solo con dígitos** (sin guiones ni espacios) y se compara igual. Ver §10. |
 
 ## 2. Datos (base `app`)
 
@@ -149,3 +150,37 @@ un adelanto da lo mismo que antes.
   parámetros y devolvía las más de 800 cuentas juntas. Solo lista cuentas
   vigentes (vínculo activo, sin borrar). `POST /admin/accounts/verify` exige
   `accounts.verify` (super_admin, admin_ops, admin_finance).
+
+## 10. Número de cuenta solo con dígitos (20/10/2026)
+
+Pedido del dueño. `04-72-01-847886-5` y `0472018478865` son la misma cuenta, pero
+el chequeo de la regla 6 comparaba el texto tal cual: con guiones no la
+reconocía y quedó una cuenta de Banco General a nombre de dos usuarios.
+
+**Dónde se limpia** (todo con `preg_replace('/\D/', '', …)`):
+
+| Repo | Lugar | Cubre |
+|---|---|---|
+| pw-appbackend | `Models/Account::setAccountNumberAttribute` | todo lo que guarda por Eloquent |
+| pw-appbackend | `AccountController::store` (antes de validar) | alta desde la app **y** el chequeo de "ya es de otra persona" |
+| pw-appbackend | `AuthService` (registro con `bank_accounts`) | registro de la app y del bot; usa `DB::table`, no pasa por el modelo |
+| pw-appbackend | `WhatsAppChatbotController`, paso `WAITING_ACCOUNT_NUMBER` | el bot ya no deja pasar guiones |
+| pw-adminbackend | `Models/Account::setAccountNumberAttribute` | alta y edición de empleados y cargas masivas desde el panel |
+
+pw-hrbackend no guarda números de cuenta (solo lee y verifica); no se tocó.
+
+**Datos:** ese día se pasaron a solo dígitos las 93 cuentas con guiones o
+espacios (respaldo `pw-staging:/root/backup-cuentas-sin-guiones-20261020095036.sql.gz`).
+Quedaron dos con caracteres raros para revisar a mano (`6464045/946464/N`,
+`9464+-)+4645454545`). No se borró ninguna cuenta: `orders.account_id` tiene
+`ON DELETE CASCADE`, y borrar una cuenta físicamente se lleva sus órdenes.
+
+**Repetidas al limpiar** (pendiente de operaciones):
+- Yariela Rose, J. Cain: la misma persona (cédula 3-701-2140) registrada dos
+  veces el 19/10, usuarios 8173 (cuenta 1344, sin órdenes) y 8622 (cuenta 1346,
+  1 orden). Los teléfonos difieren en un dígito.
+- Tatiana Tinoco, Royal Casino, usuario 1024 (inactiva): la misma cuenta dos
+  veces (25 con 17 órdenes, 42 sin órdenes). Inofensivo.
+
+**Ojo en el panel:** la búsqueda por número de cuenta compara con `LIKE`; quien
+busque con guiones no encuentra nada. Buscar solo con los dígitos.
